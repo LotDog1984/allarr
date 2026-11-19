@@ -64,12 +64,22 @@ function injectTheme(html, theme) {
   return /<\/head>/i.test(html) ? html.replace(/<\/head>/i, `${tag}</head>`) : tag + html;
 }
 
+/** Apps like SABnzbd show a first-run wizard unless the main page is opened with a flag. */
+function withEntryParams(mod, path, req) {
+  if (!mod.entryParams || !wantsHtml(req)) return path;
+  const u = new URL(path, 'http://x');
+  const main = `${mod.basePath}/`;
+  if (u.pathname !== main && u.pathname !== mod.basePath) return path;
+  for (const [k, v] of Object.entries(mod.entryParams)) if (!u.searchParams.has(k)) u.searchParams.set(k, v);
+  return u.pathname + u.search;
+}
+
 export function proxyHttp(req, res, mod) {
   const theming = themeOn(mod) && wantsHtml(req);
   const headers = upstreamHeaders(req, mod);
   if (theming) headers['accept-encoding'] = 'identity'; // we need to read (and edit) the HTML
   const upstream = http.request(
-    { host: '127.0.0.1', port: mod.listenPort, method: req.method, path: upstreamPath(mod, req.url), headers },
+    { host: '127.0.0.1', port: mod.listenPort, method: req.method, path: withEntryParams(mod, upstreamPath(mod, req.url), req), headers },
     (ur) => {
       const h = { ...ur.headers };
       delete h['x-frame-options']; // the Hub shows apps inside its own frame

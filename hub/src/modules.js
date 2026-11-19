@@ -21,6 +21,7 @@ export const GROUPS = [
  *  port       internal port (apps listen on 127.0.0.1 only, except `exposed` ones)
  *  basePath   URL prefix the Hub serves the app under (login-protected)
  *  stripBase  the app has no URL-base option, so the Hub strips the prefix itself
+ *  entryParams  query added when its main page is opened (SABnzbd: skip the quick-start wizard)
  *  exposed    app has its own login and must be reachable on its own port (requests / invites)
  *  run()      how to launch it inside the container
  */
@@ -71,7 +72,7 @@ export const MODULES = [
     }),
   },
   {
-    id: 'sabnzbd', theme: 'sabnzbd', name: 'SABnzbd', role: 'Usenet', group: 'download', color: '#f4b400',
+    id: 'sabnzbd', theme: 'sabnzbd', entryParams: { skip_wizard: '1' }, name: 'SABnzbd', role: 'Usenet', group: 'download', color: '#f4b400',
     blurb: 'Built-in Usenet client. Just add your provider.',
     port: 8085, basePath: '/sabnzbd', kind: 'sabnzbd', health: '/api?mode=version&output=json', defaultOn: true,
     run: (m) => ({

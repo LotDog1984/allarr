@@ -16,7 +16,8 @@ export async function call(id, method, path, { body, form, headers, timeout = 20
   const res = await fetch(url, {
     method,
     headers: {
-      'X-Api-Key': keyOf(id) ?? '',
+      // Only when we have a key: some apps treat an empty X-Api-Key as a failed API-key login and ignore Bearer tokens.
+      ...(keyOf(id) ? { 'X-Api-Key': keyOf(id) } : {}),
       Accept: 'application/json',
       ...(body ? { 'Content-Type': 'application/json' } : {}),
       ...headers,

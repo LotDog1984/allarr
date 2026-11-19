@@ -56,7 +56,7 @@ export function list() {
     t.push({
       id: 'cleanuparr', app: 'cleanuparr', path: '/cleanuparr/', cta: 'Open Cleanuparr',
       title: 'Connect Cleanuparr',
-      detail: 'Add your Sonarr, Radarr and download clients, then choose what counts as stalled. Connection details are in Settings.',
+      detail: 'Add your Sonarr, Radarr and download clients, then choose what counts as stalled. No sign-in needed: Allarr already took care of that. Connection details are in Settings.',
     });
   }
   return t.map((x) => ({ ...x, done: !!s.todos[x.id] }));

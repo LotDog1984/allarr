@@ -194,7 +194,7 @@ const secured = {
   'GET /api/connections': (req, res) =>
     json(res, 200, enabledMods().map((m) => ({
       id: m.id, name: m.name, url: baseUrl(m), apiKey: keyOf(m.id) ?? null,
-      extra: m.id === 'qbittorrent' ? store.get().qbittorrent : null,
+      extra: m.id === 'qbittorrent' ? store.get().qbittorrent : m.id === 'cleanuparr' ? (store.get().modules.cleanuparr?.login ?? null) : null,
     }))),
 
   'POST /api/password': async (req, res) => {

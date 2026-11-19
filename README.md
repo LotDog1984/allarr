@@ -90,6 +90,7 @@ The Hub verifies this with a real test on the Storage step and shows a clear war
 | Subtitles | Bazarr linked to Sonarr and Radarr. |
 | Requests | Sonarr and Radarr pre-added to Seerr. |
 | Usenet | Your provider added to SABnzbd (optional). |
+| First-run screens | **Cleanuparr**: its account is created with a random password (kept in *Settings → Connection details*) and it is told to trust Allarr, so there is no second sign-in. **SABnzbd**: opens straight onto its queue instead of the quick-start wizard (add your provider from the checklist). |
 
 Every step is idempotent. **Settings → Re-apply connections** can be run at any time, and turning apps on/off in
 Settings re-wires everything.

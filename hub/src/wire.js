@@ -9,6 +9,7 @@ import * as seed from './seed.js';
 import * as health from './health.js';
 import * as sup from './supervisor.js';
 import { byId, baseUrl, MODULES } from './modules.js';
+import crypto from 'node:crypto';
 import { arr, call, keyOf, upsertWithSchema, ApiError } from './arr.js';
 import { canWrite, fixHint } from './perms.js';
 
@@ -94,6 +95,44 @@ const steps = {
         : `✗ ${name(id)} didn't start${sup.info(id).error ? ` (${sup.info(id).error})` : ' — check its log in Settings'}${lastLog(id)}`,
     );
     return { status: !down.length ? 'ok' : down.length === ids.length ? 'error' : 'warn', detail: lines.join('\n') };
+  },
+
+  /**
+   * Cleanuparr insists on its own account on first run. Allarr already signs you in, so: create that account
+   * with a random password (kept under Settings -> Connection details), finish its setup, and switch on its
+   * "disable authentication for local addresses" mode. Only the Hub can reach it (127.0.0.1), so this is safe.
+   */
+  async cleanuparr(ctx) {
+    if (!ctx.up.has('cleanuparr')) return { status: 'warn', detail: '✗ Cleanuparr is not running.' };
+    const api = (method, path, opts) => call('cleanuparr', method, path, opts);
+    let status = await api('GET', '/api/auth/status');
+    let creds = store.get().modules.cleanuparr?.login;
+
+    if (!status.setupCompleted) {
+      creds ??= { username: 'allarr', password: `${crypto.randomBytes(18).toString('base64url')}-Aa1` };
+      store.update((s) => { s.modules.cleanuparr = { ...s.modules.cleanuparr, login: creds }; }); // keep it before using it
+      await api('POST', '/api/auth/setup/account', { body: creds });
+      await api('POST', '/api/auth/setup/complete', { body: {} });
+      status = await api('GET', '/api/auth/status');
+    }
+    if (status.authBypassActive) return { status: 'ok', detail: '✓ Cleanuparr already trusts Allarr, so there is no second sign-in' };
+    if (!creds) {
+      return {
+        status: 'warn',
+        detail: "! Cleanuparr already has an account that Allarr doesn't know. In Cleanuparr: Settings → General → turn on \"Disable authentication for local addresses\" to skip its sign-in.",
+      };
+    }
+
+    const login = await api('POST', '/api/auth/login', { body: creds });
+    const token = login?.tokens?.accessToken;
+    if (!token) throw new Error('Cleanuparr did not return a sign-in token');
+    const headers = { Authorization: `Bearer ${token}` };
+    const general = await api('GET', '/api/configuration/general', { headers });
+    general.auth = { ...general.auth, disableAuthForLocalAddresses: true };
+    await api('PUT', '/api/configuration/general', { headers, body: general });
+    status = await api('GET', '/api/auth/status');
+    if (!status.authBypassActive) throw new Error('Cleanuparr did not accept the setting');
+    return { status: 'ok', detail: '✓ Cleanuparr set up and now trusts Allarr (no second sign-in)' };
   },
 
   async usenet(ctx) {
@@ -250,6 +289,7 @@ function plan(ids) {
   const libs = ids.filter((id) => byId[id].rootFolder);
   const p = [{ id: 'storage', label: 'Preparing your media folders' }];
   p.push({ id: 'start', label: 'Starting your apps' }, { id: 'wait', label: 'Waiting for the apps to wake up' });
+  if (has('cleanuparr')) p.push({ id: 'cleanuparr', label: 'Skipping Cleanuparr\'s separate sign-in' });
   if (has('sabnzbd')) p.push({ id: 'usenet', label: 'Setting up Usenet' });
   if (libs.length) p.push({ id: 'libraries', label: 'Pointing libraries at /media' });
   if (libs.length && has('qbittorrent', 'sabnzbd')) p.push({ id: 'downloaders', label: 'Connecting the download clients' });

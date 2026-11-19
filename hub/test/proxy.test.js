@@ -84,3 +84,30 @@ test('every theme file that a module names exists', () => {
     if (m.theme) assert.ok(fs.existsSync(path.join(dir, `${m.theme}.css`)), `${m.id} -> ${m.theme}.css`);
   }
 });
+
+test('apps with entryParams (SABnzbd) get them on their main page only', async () => {
+  const sab = { ...radarr, entryParams: { skip_wizard: '1' } };
+  const srv = http.createServer((req, res) => proxyHttp(req, res, sab));
+  await listen(srv, 0);
+  // record the URL the app actually receives
+  let got;
+  app.removeAllListeners('request');
+  app.on('request', (req, res) => {
+    got = req.url;
+    res.setHeader('content-type', 'text/html');
+    res.end('<html><head></head></html>');
+  });
+  const open = async (p, dest = 'iframe') => {
+    await fetch(`http://127.0.0.1:${srv.address().port}${p}`, { headers: { 'sec-fetch-dest': dest } });
+    return got;
+  };
+  try {
+    assert.equal(await open('/radarr/'), '/radarr/?skip_wizard=1');
+    assert.equal(await open('/radarr/?skip_wizard=0'), '/radarr/?skip_wizard=0', "an explicit value isn't overridden");
+    assert.equal(await open('/radarr/config/general/'), '/radarr/config/general/', 'other pages are untouched');
+    assert.equal(await open('/radarr/', 'empty'), '/radarr/', 'API/XHR requests are untouched');
+  } finally {
+    srv.closeAllConnections?.();
+    srv.close();
+  }
+});
