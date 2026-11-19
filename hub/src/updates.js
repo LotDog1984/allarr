@@ -64,7 +64,11 @@ function currentOf(id) {
 
 async function getJson(url) {
   const res = await fetch(url, { headers: UA, signal: AbortSignal.timeout(20_000) });
-  if (!res.ok) throw new Error(`${new URL(url).host} answered ${res.status}`);
+  if (!res.ok) {
+    const host = new URL(url).host;
+    if (host === 'api.github.com' && [403, 429].includes(res.status)) throw new Error("GitHub is limiting requests from this network right now. It will try again later.");
+    throw new Error(`${host} answered ${res.status}`);
+  }
   return res.json();
 }
 
