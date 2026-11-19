@@ -197,6 +197,26 @@ export function runWiring(title, request = () => api('/setup/run', { method: 'PO
 }
 
 // ─────────────────────────────────────────────────────────────────────────── settings ───
+function addressesCard() {
+  const apps = S.catalog.modules.filter((m) => m.exposedPort != null);
+  if (!apps.length || !apps.some((m) => S.statuses.has(m.id))) return null;
+  const inputs = Object.fromEntries(apps.map((m) => [m.id, h('input', { class: 'input', placeholder: `${m.name} port or address`, value: String(m.exposedPort) })]));
+  const err = h('div', { class: 'error-text', role: 'alert' });
+  return h('div', { class: 'card' },
+    h('div', { class: 'card-title' }, icon('external', 20), h('h3', {}, 'Addresses for requests and invites')),
+    h('p', { class: 'small muted', style: { marginBottom: '14px' } },
+      'Seerr and Wizarr are opened on their own port. If you published them under different ports (for example 12000:5055), enter the port you use on the left, or a full address if they sit behind your own domain.'),
+    h('div', { class: 'row' }, apps.map((m) => h('div', { class: 'field' }, h('label', {}, `${m.name} (default ${m.id === 'seerr' ? 5055 : 5690})`), inputs[m.id]))),
+    err,
+    button('Save addresses', { kind: 'secondary', onClick: async () => {
+      err.textContent = '';
+      try {
+        S.catalog = await api('/settings/addresses', { method: 'POST', body: Object.fromEntries(apps.map((m) => [m.id, inputs[m.id].value])) });
+        toast('Addresses saved', 'ok');
+      } catch (e) { err.textContent = e.message; }
+    } }));
+}
+
 function settings() {
   const sel = new Set(S.answers.apps ?? []);
   const original = new Set(sel);
@@ -237,6 +257,7 @@ function settings() {
       h('div', { class: 'card-title' }, icon('bolt', 20), h('h3', {}, 'Apps'), applyBtn),
       appPicker(sel, changed)),
     h('div', { class: 'card' }, h('div', { class: 'card-title' }, icon('disk', 20), h('h3', {}, 'Storage')), sBox),
+    addressesCard(),
     h('div', { class: 'card' }, h('div', { class: 'card-title' }, icon('link', 20), h('h3', {}, 'Connection details'),
       button('Show', { kind: 'secondary', cls: 'btn-sm', onClick: (e) => { e.currentTarget.remove(); showConn().catch((x) => toast(x.message, 'error')); } })),
       connBox, h('div', { class: 'muted small' }, 'Addresses and API keys for the built-in apps, for connecting extras like Maintainerr or Cleanuparr.')),

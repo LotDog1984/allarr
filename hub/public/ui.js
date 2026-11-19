@@ -148,7 +148,7 @@ export const greeting = () => {
 };
 
 /** Where do the apps that live on their own port (Seerr, Wizarr) live from this browser's point of view? */
-export const exposedUrl = (port) => `${location.protocol}//${location.hostname}:${port}`;
+export const exposedUrl = (addr) => (/^https?:\/\//.test(String(addr)) ? String(addr) : `${location.protocol}//${location.hostname}:${addr}`);
 
 export function modal({ title, body, actions = [], wide = false, onClose }) {
   const close = () => {

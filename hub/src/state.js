@@ -15,6 +15,7 @@ const defaults = () => ({
   todos: {}, // id -> true when ticked off
   wiring: null, // last wiring run
   updates: null, // last upstream version check
+  settings: {}, // { addresses: { seerr, wizarr } } what the user types into Settings
 });
 
 export function load() {

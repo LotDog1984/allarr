@@ -20,6 +20,10 @@ services:
       PUID: "1000"           # the apps run as this user/group: use the owner of your media folder
       PGID: "1000"           #   (on most systems: run `id` and use your uid/gid)
       TZ: "Etc/UTC"          # e.g. Europe/Berlin
+      # If you change the HOST side of a port above (e.g. "12000:5055"), tell the Hub so its "Open Seerr" links
+      # match: either set these, or use Settings -> "Addresses for requests and invites" in the GUI.
+      # PUBLIC_PORT_SEERR: "12000"
+      # PUBLIC_PORT_WIZARR: "13000"
     volumes:
       # 1) Where every app keeps its settings and databases. Back this folder up.
       - /opt/allarr/config:/config

@@ -86,6 +86,14 @@ function serveEvents(req, res) {
   });
 }
 
+/** Port (or full URL) a browser should use to reach an app that lives on its own port. */
+const publicAddress = (m) =>
+  store.get().settings?.addresses?.[m.id] ?? process.env[`PUBLIC_PORT_${m.id.toUpperCase()}`] ?? m.port;
+const catalog = () => ({
+  groups: GROUPS,
+  modules: MODULES.map((m) => ({ ...publicInfo(m), exposedPort: m.exposed ? publicAddress(m) : null })),
+});
+
 // -------------------------------------------------------------------------- API routes ---
 const NAME_RE = /^[a-zA-Z0-9_.-]{3,32}$/;
 
@@ -124,7 +132,23 @@ const open = {
 };
 
 const secured = {
-  'GET /api/catalog': (req, res) => json(res, 200, { groups: GROUPS, modules: MODULES.map(publicInfo) }),
+  'GET /api/catalog': (req, res) => json(res, 200, catalog()),
+
+  // Seerr/Wizarr keep their own port. The container can't know which HOST port was published, so let the user say.
+  'POST /api/settings/addresses': async (req, res) => {
+    const body = await readJson(req);
+    const next = {};
+    for (const m of MODULES.filter((x) => x.exposed)) {
+      const v = String(body[m.id] ?? '').trim();
+      if (!v) continue;
+      const okPort = /^\d+$/.test(v) && +v >= 1 && +v <= 65535;
+      const okUrl = /^https?:\/\/[^\s/]+(\/\S*)?$/.test(v);
+      if (!okPort && !okUrl) return fail(res, 400, `${m.name}: enter a port number (like 12000) or a full address (like https://requests.example.com).`);
+      next[m.id] = v.replace(/\/$/, '');
+    }
+    store.update((s) => { s.settings = { ...s.settings, addresses: next }; });
+    json(res, 200, catalog());
+  },
 
   'GET /api/answers': (req, res) => json(res, 200, store.get().setup.answers ?? {}),
 
