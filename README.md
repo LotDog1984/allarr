@@ -10,7 +10,7 @@ them behind one login, and wires them to each other for you. No pasting API keys
 
 **Dockge / Portainer / any Docker host:** paste [docker-compose.yml](docker-compose.yml) as a new stack, set the two
 volume folders (`/config` for settings, `/media` for everything else), and deploy. The image is built by GitHub
-Actions and published to `ghcr.io/<owner>/allarr`.
+Actions and published to `ghcr.io/lotdog1984/allarr`.
 
 **From a checkout:** `docker compose -f docker-compose.build.yml up -d --build`
 

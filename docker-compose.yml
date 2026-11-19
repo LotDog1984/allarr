@@ -7,7 +7,7 @@
 
 services:
   allarr:
-    image: ghcr.io/OWNER/allarr:latest
+    image: ghcr.io/lotdog1984/allarr:latest
     container_name: allarr
     restart: unless-stopped
     ports:
