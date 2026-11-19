@@ -20,6 +20,7 @@
 
 * { box-sizing: border-box; }
 html, body { height: 100%; }
+#root { height: 100%; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 var(--font); -webkit-font-smoothing: antialiased; }
 h1, h2, h3, h4 { margin: 0; letter-spacing: -.01em; line-height: 1.2; }
 h1 { font-size: 28px; } h2 { font-size: 22px; } h3 { font-size: 17px; }
@@ -216,3 +217,11 @@ pre.log { margin: 0; font: 12.5px/1.55 var(--mono); color: var(--muted); backgro
 .upd-row { display: flex; gap: 14px; align-items: flex-start; padding: 16px 0; border-top: 1px solid var(--line); }
 .upd-row:first-of-type { border-top: 0; padding-top: 4px; }
 .changes { margin: 8px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
+
+/* ---------- embedded apps fill the whole content area (their own header is the only top bar) ---------- */
+.frame-wrap.solo { grid-template-rows: 1fr; position: relative; }
+.nav-sub { display: flex; flex-wrap: wrap; gap: 4px; padding: 2px 8px 8px 38px; }
+.sidebar { overflow-x: hidden; }
+.nav-sub-btn { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 8px; border-radius: 7px; border: 0; background: transparent; color: var(--faint); font: 600 12px var(--font); cursor: pointer; }
+.nav-sub-btn:hover { background: var(--panel2); color: var(--text); }
+.menu-fab { position: absolute; left: 10px; bottom: 10px; z-index: 5; width: 42px; height: 42px; border-radius: 50%; background: var(--panel); border: 1px solid var(--line2); box-shadow: var(--shadow); color: var(--text); }

@@ -26,6 +26,23 @@ Open **http://your-server:8080** and follow the setup wizard (about two minutes)
 Afterwards the dashboard shows each app's status, your storage health, and a short **Finish setup** checklist for
 the things only a human can do (adding indexers, signing in to your media server, choosing subtitle languages).
 
+## One look for every app
+
+The embedded apps are restyled to match Allarr, so the whole thing reads as one application instead of apps inside an
+app. The Hub injects a stylesheet into each app's page as it passes through the proxy:
+
+* Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, qBittorrent, SABnzbd, Maintainerr and Cleanuparr use Allarr's colours,
+  typography and corners, in dark **and** light mode (following your system setting).
+* The apps' own logo header is hidden (the Hub already shows which app you're in), and the Hub has no extra top bar for
+  embedded apps. Their Log / Restart / New tab actions sit under the app in the sidebar.
+* **Only the look changes.** Menus, pages and features are the apps' own. If something looks wrong, switch it off in
+  *Settings → Appearance*.
+* Themes are plain CSS in [hub/public/themes](hub/public/themes) (`base.css` holds the shared palette). They rely on
+  each app's own theme variables where it has them, and on class-name prefixes where it doesn't, so a big upstream
+  redesign can need a small CSS touch-up.
+* **Seerr and Wizarr are not restyled**: they run on their own ports for the people you share them with, so they keep
+  their own look.
+
 ## Updates (always with your confirmation)
 
 Allarr never updates anything by itself.
@@ -118,7 +135,8 @@ Verified (Docker, amd64, fresh volumes, full wizard flow through the API):
   Seerr keeps the pre-added Sonarr/Radarr after its restart.
 * Every admin app is reachable only through the Hub login (401 without it), and the real Sonarr UI renders
   inside the Hub frame.
-* 14 unit tests (`cd hub && npm test`), including the whole in-place update flow with mocked upstreams, plus a
+* 19 unit tests (`cd hub && npm test`), including the whole in-place update flow with mocked upstreams and the theme
+  injection, plus a
   mock-app dev setup for working on the GUI without Docker.
 
 Not verified yet:

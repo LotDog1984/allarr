@@ -1,0 +1,27 @@
+/*
+ * Shared Allarr palette for every embedded app. Injected before the app's own theme file (see src/proxy.js).
+ * The values mirror the Hub's own design tokens in /style.css.
+ */
+:root {
+  --a-bg: #0e1015; --a-bg2: #12151c; --a-panel: #171a22; --a-panel2: #1d212b; --a-line: #2a2f3b; --a-line2: #353b49;
+  --a-text: #eceef4; --a-muted: #99a2b3; --a-faint: #6d7586;
+  --a-accent: #6f7bff; --a-accent2: #9b6bff; --a-accent-hover: #5f6cf0; --a-accent-soft: rgba(111, 123, 255, .16); --a-accent-rgb: 111, 123, 255;
+  --a-ok: #34c77b; --a-ok-hover: #2bb06b; --a-warn: #f2b53c; --a-warn-hover: #e0a22a; --a-err: #f0605d; --a-err-hover: #e04845;
+  --a-shadow: rgba(0, 0, 0, .35); --a-hover: rgba(255, 255, 255, .05); --a-backdrop: rgba(5, 7, 12, .66);
+  --a-font: Inter, "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  color-scheme: dark light;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --a-bg: #f3f4f8; --a-bg2: #eceef4; --a-panel: #ffffff; --a-panel2: #f5f6fa; --a-line: #e1e4ec; --a-line2: #cfd4e0;
+    --a-text: #171a22; --a-muted: #5a6376; --a-faint: #8a93a5;
+    --a-accent: #4f5bff; --a-accent2: #7c4dff; --a-accent-hover: #3f4be6; --a-accent-soft: rgba(79, 91, 255, .12); --a-accent-rgb: 79, 91, 255;
+    --a-ok: #178a52; --a-ok-hover: #12733f; --a-warn: #a66c00; --a-warn-hover: #8f5c00; --a-err: #c9302c; --a-err-hover: #b02421;
+    --a-shadow: rgba(30, 40, 80, .12); --a-hover: rgba(0, 0, 0, .04); --a-backdrop: rgba(20, 25, 45, .4);
+  }
+}
+
+* { scrollbar-color: var(--a-line2) transparent; scrollbar-width: thin; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--a-line2); border-radius: 10px; border: 2px solid transparent; background-clip: content-box; }
+::-webkit-scrollbar-track { background: transparent; }

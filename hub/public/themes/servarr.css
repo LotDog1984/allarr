@@ -1,0 +1,90 @@
+/*
+ * Allarr theme for Sonarr, Radarr, Lidarr and Prowlarr.
+ *
+ * (The shared palette, the --a-* variables, comes from base.css, which is injected first.)
+ * The Hub injects this into the app's page (see src/proxy.js). The apps expose their colours as CSS custom
+ * properties set inline on <html>, so everything below uses !important to win. Layout, menus and functions are
+ * untouched: this only changes colours, type, corners and hides the duplicate logo.
+ * Turn it off any time in Allarr -> Settings -> Appearance.
+ */
+html {
+  /* text */
+  --textColor: var(--a-text) !important; --defaultColor: var(--a-text) !important; --disabledColor: var(--a-faint) !important;
+  --dimColor: var(--a-faint) !important; --helpTextColor: var(--a-muted) !important; --infoTextColor: var(--a-text) !important;
+  --darkGray: var(--a-faint) !important; --gray: var(--a-muted) !important; --mediumGray: var(--a-muted) !important; --lightGray: var(--a-line2) !important;
+  /* brand + status colours */
+  --primaryColor: var(--a-accent) !important; --selectedColor: var(--a-accent) !important; --infoColor: var(--a-accent) !important;
+  --linkColor: var(--a-accent) !important; --linkHoverColor: var(--a-accent2) !important; --defaultLinkHoverColor: var(--a-text) !important;
+  --sliderAccentColor: var(--a-accent) !important; --themeBlue: var(--a-accent) !important; --themeAlternateYellow: var(--a-accent2) !important;
+  --themeRed: var(--a-err) !important; --themeDarkColor: var(--a-panel2) !important; --themeLightColor: var(--a-line2) !important;
+  --successColor: var(--a-ok) !important; --dangerColor: var(--a-err) !important; --warningColor: var(--a-warn) !important;
+  /* page chrome: header, sidebar and toolbar share the Hub's backgrounds so the app feels like one surface */
+  --pageBackground: var(--a-bg) !important; --pageHeaderBackgroundColor: var(--a-bg) !important; --pageFooterBackgroud: transparent !important;
+  --sidebarColor: var(--a-muted) !important; --sidebarBackgroundColor: var(--a-bg2) !important; --sidebarActiveBackgroundColor: var(--a-accent-soft) !important;
+  --toolbarColor: var(--a-muted) !important; --toolbarLabelColor: var(--a-muted) !important; --toolbarBackgroundColor: var(--a-bg) !important;
+  --toolbarMenuItemBackgroundColor: var(--a-panel) !important; --toolbarMenuItemHoverBackgroundColor: var(--a-panel2) !important;
+  --toobarButtonHoverColor: var(--a-accent) !important; --toobarButtonSelectedColor: var(--a-accent) !important;
+  --menuItemColor: var(--a-text) !important; --menuItemHoverColor: var(--a-accent) !important; --menuItemHoverBackgroundColor: var(--a-panel2) !important;
+  --borderColor: var(--a-line) !important; --scrollbarBackgroundColor: var(--a-line2) !important; --scrollbarHoverBackgroundColor: var(--a-faint) !important;
+  /* form controls */
+  --inputBackgroundColor: var(--a-bg2) !important; --inputReadOnlyBackgroundColor: var(--a-panel) !important; --inputBorderColor: var(--a-line2) !important;
+  --inputBoxShadowColor: transparent !important; --inputFocusBorderColor: var(--a-accent) !important; --inputFocusBoxShadowColor: var(--a-accent-soft) !important;
+  --inputHoverBackgroundColor: var(--a-hover) !important; --inputSelectedBackgroundColor: var(--a-accent-soft) !important;
+  --inputErrorBorderColor: var(--a-err) !important; --inputWarningBorderColor: var(--a-warn) !important;
+  --advancedFormLabelColor: var(--a-warn) !important; --disabledInputColor: var(--a-faint) !important;
+  /* buttons */
+  --defaultButtonTextColor: var(--a-text) !important; --defaultBackgroundColor: var(--a-panel2) !important; --defaultBorderColor: var(--a-line2) !important;
+  --defaultHoverBackgroundColor: var(--a-line) !important; --defaultHoverBorderColor: var(--a-accent) !important;
+  --primaryBackgroundColor: var(--a-accent) !important; --primaryBorderColor: var(--a-accent) !important;
+  --primaryHoverBackgroundColor: var(--a-accent-hover) !important; --primaryHoverBorderColor: var(--a-accent-hover) !important;
+  --successBackgroundColor: var(--a-ok) !important; --successBorderColor: var(--a-ok) !important;
+  --successHoverBackgroundColor: var(--a-ok-hover) !important; --successHoverBorderColor: var(--a-ok-hover) !important;
+  --warningBackgroundColor: var(--a-warn) !important; --warningBorderColor: var(--a-warn) !important;
+  --warningHoverBackgroundColor: var(--a-warn-hover) !important; --warningHoverBorderColor: var(--a-warn-hover) !important;
+  --dangerBackgroundColor: var(--a-err) !important; --dangerBorderColor: var(--a-err) !important;
+  --dangerHoverBackgroundColor: var(--a-err-hover) !important; --dangerHoverBorderColor: var(--a-err-hover) !important;
+  --iconButtonHoverColor: var(--a-accent) !important; --iconButtonHoverLightColor: var(--a-text) !important; --iconButtonDisabledColor: var(--a-faint) !important;
+  /* surfaces */
+  --cardBackgroundColor: var(--a-panel) !important; --cardAlternateBackgroundColor: var(--a-panel) !important; --cardCenterBackgroundColor: var(--a-panel2) !important;
+  --cardShadowColor: var(--a-shadow) !important;
+  --modalBackgroundColor: var(--a-panel) !important; --modalBackdropBackgroundColor: var(--a-backdrop) !important; --modalCloseButtonHoverColor: var(--a-text) !important;
+  --popoverTitleBackgroundColor: var(--a-panel2) !important; --popoverTitleBorderColor: var(--a-line) !important; --popoverBodyBackgroundColor: var(--a-panel) !important;
+  --popoverArrowBorderColor: var(--a-panel) !important; --popoverShadowColor: var(--a-shadow) !important;
+  --calendarBackgroundColor: var(--a-panel) !important; --calendarTodayBackgroundColor: var(--a-accent-soft) !important; --calendarBorderColor: var(--a-line) !important;
+  --tableRowHoverBackgroundColor: var(--a-hover) !important; --logEventsBackgroundColor: var(--a-panel) !important;
+  --searchIconContainerBackgroundColor: var(--a-panel2) !important; --progressBarBackgroundColor: var(--a-line2) !important;
+  --addMovieBackgroundColor: var(--a-panel) !important; --movieBackgroundColor: var(--a-panel) !important;
+  --addSeriesBackgroundColor: var(--a-panel) !important; --seriesBackgroundColor: var(--a-panel) !important;
+  --addArtistBackgroundColor: var(--a-panel) !important; --artistBackgroundColor: var(--a-panel) !important;
+  /* alerts */
+  --alertDangerBorderColor: var(--a-err) !important; --alertDangerBackgroundColor: color-mix(in srgb, var(--a-err) 12%, transparent) !important; --alertDangerColor: var(--a-text) !important;
+  --alertInfoBorderColor: var(--a-accent) !important; --alertInfoBackgroundColor: var(--a-accent-soft) !important; --alertInfoColor: var(--a-text) !important;
+  --alertSuccessBorderColor: var(--a-ok) !important; --alertSuccessBackgroundColor: color-mix(in srgb, var(--a-ok) 12%, transparent) !important; --alertSuccessColor: var(--a-text) !important;
+  --alertWarningBorderColor: var(--a-warn) !important; --alertWarningBackgroundColor: color-mix(in srgb, var(--a-warn) 14%, transparent) !important; --alertWarningColor: var(--a-text) !important;
+  color-scheme: dark light;
+}
+
+/* ---- type, corners, scrollbars ---- */
+body, input, button, select, textarea {
+  font-family: Inter, "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif !important;
+}
+input, select, textarea, button { border-radius: 10px; }
+[class*="Card-card"], [class*="Panel-panel"], [class*="Menu-menu"], [class*="Popover-popover"] { border-radius: 12px; }
+[class*="ModalContent-modalContent"] { border-radius: 16px; overflow: hidden; }
+* { scrollbar-color: var(--a-line2) transparent; scrollbar-width: thin; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--a-line2); border-radius: 10px; border: 2px solid transparent; background-clip: content-box; }
+
+/* ---- one surface: the Hub already shows which app this is, so drop the app's own logo ---- */
+[class*="PageHeader-logoContainer"] { display: none !important; }
+[class*="PageHeader-header"] { border-bottom: 1px solid var(--a-line); }
+[class*="PageSidebar-sidebarContainer"] { border-right: 1px solid var(--a-line); }
+[class*="PageToolbar-toolbar"] { border-bottom: 1px solid var(--a-line); }
+
+/* light mode: the header's search box and icons assume a dark bar, so give them readable colours */
+@media (prefers-color-scheme: light) {
+  [class*="PageHeader-header"] { color: var(--a-text) !important; }
+  [class*="PageHeader-header"] svg, [class*="PageHeader-header"] button { color: var(--a-muted) !important; }
+  [class*="SearchInput"] input, input[class*="SearchInput"] { color: var(--a-text) !important; border-bottom-color: var(--a-line2) !important; }
+  [class*="SearchInput"] input::placeholder { color: var(--a-faint) !important; }
+}

@@ -1,0 +1,50 @@
+/* Allarr theme for Bazarr (Mantine UI). Only colours, type and corners; layout and features are untouched. */
+html, :root[data-mantine-color-scheme] {
+  --mantine-font-family: var(--a-font) !important;
+  --mantine-font-family-headings: var(--a-font) !important;
+  --mantine-radius-default: 0.625rem !important;
+  /* accent */
+  --mantine-primary-color-filled: var(--a-accent) !important; --mantine-primary-color-filled-hover: var(--a-accent-hover) !important;
+  --mantine-primary-color-light: var(--a-accent-soft) !important; --mantine-primary-color-light-hover: rgba(var(--a-accent-rgb), .24) !important;
+  --mantine-primary-color-light-color: var(--a-accent) !important; --mantine-color-anchor: var(--a-accent) !important;
+  --mantine-primary-color-0: var(--a-accent-soft) !important; --mantine-primary-color-1: var(--a-accent-soft) !important;
+  --mantine-primary-color-2: var(--a-accent) !important; --mantine-primary-color-3: var(--a-accent) !important; --mantine-primary-color-4: var(--a-accent) !important;
+  --mantine-primary-color-5: var(--a-accent) !important; --mantine-primary-color-6: var(--a-accent) !important; --mantine-primary-color-7: var(--a-accent-hover) !important;
+  --mantine-primary-color-8: var(--a-accent-hover) !important; --mantine-primary-color-9: var(--a-accent-hover) !important;
+}
+/* dark: Mantine uses dark-7 as the page, dark-6 for surfaces, dark-4 for borders */
+:root[data-mantine-color-scheme='dark'] {
+  --mantine-color-body: var(--a-bg) !important; --mantine-color-text: var(--a-text) !important; --mantine-color-dimmed: var(--a-muted) !important;
+  --mantine-color-dark-0: #eceef4 !important; --mantine-color-dark-1: #c4cad6 !important; --mantine-color-dark-2: #99a2b3 !important;
+  --mantine-color-dark-3: #6d7586 !important; --mantine-color-dark-4: #353b49 !important; --mantine-color-dark-5: #2a2f3b !important;
+  --mantine-color-dark-6: #171a22 !important; --mantine-color-dark-7: #0e1015 !important; --mantine-color-dark-8: #12151c !important; --mantine-color-dark-9: #0a0c10 !important;
+  --mantine-color-default: var(--a-panel) !important; --mantine-color-default-hover: var(--a-panel2) !important; --mantine-color-default-border: var(--a-line2) !important;
+  --mantine-color-default-color: var(--a-text) !important;
+}
+:root[data-mantine-color-scheme='light'] {
+  --mantine-color-body: var(--a-bg) !important; --mantine-color-text: var(--a-text) !important; --mantine-color-dimmed: var(--a-muted) !important;
+  --mantine-color-default: var(--a-panel) !important; --mantine-color-default-border: var(--a-line2) !important;
+}
+/* header and sidebar share the Hub's surfaces */
+.mantine-AppShell-header { background: var(--a-bg) !important; border-bottom: 1px solid var(--a-line) !important; }
+.mantine-AppShell-navbar { background: var(--a-bg2) !important; border-right: 1px solid var(--a-line) !important; }
+.mantine-AppShell-main { background: var(--a-bg) !important; }
+body, input, button, select, textarea { font-family: var(--a-font) !important; }
+
+/* Bazarr's primary colour is Mantine's "grape" palette, referenced directly by many components */
+:root, :root[data-mantine-color-scheme] {
+  --mantine-color-grape-filled: var(--a-accent) !important; --mantine-color-grape-filled-hover: var(--a-accent-hover) !important;
+  --mantine-color-grape-light: var(--a-accent-soft) !important; --mantine-color-grape-light-hover: rgba(var(--a-accent-rgb), .24) !important;
+  --mantine-color-grape-light-color: var(--a-accent) !important; --mantine-color-grape-outline: var(--a-accent) !important;
+  --mantine-color-grape-outline-hover: var(--a-accent-soft) !important; --mantine-color-grape-text: var(--a-accent) !important;
+  --mantine-color-grape-0: var(--a-accent-soft) !important; --mantine-color-grape-1: var(--a-accent-soft) !important;
+  --mantine-color-grape-2: var(--a-accent) !important; --mantine-color-grape-3: var(--a-accent) !important; --mantine-color-grape-4: var(--a-accent) !important;
+  --mantine-color-grape-5: var(--a-accent) !important; --mantine-color-grape-6: var(--a-accent) !important; --mantine-color-grape-7: var(--a-accent-hover) !important;
+  --mantine-color-grape-8: var(--a-accent-hover) !important; --mantine-color-grape-9: var(--a-accent-hover) !important;
+}
+
+/* a few elements use hard-coded purple in Bazarr's own module CSS */
+.mantine-Badge-root { background: var(--a-accent-soft) !important; color: var(--a-accent) !important; }
+[class*="_anchor_"][class*="_active_"] { border-left-color: var(--a-accent) !important; background: var(--a-accent-soft) !important; }
+.mantine-ActionIcon-root:not(.mantine-ActionIcon-root[data-variant="filled"]) .mantine-ActionIcon-icon { color: var(--a-accent) !important; }
+.mantine-AppShell-header { backdrop-filter: none !important; }

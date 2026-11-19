@@ -1,0 +1,19 @@
+/* Allarr theme for Cleanuparr: remaps its brand/surface/text variables and removes the decorative purple glow. */
+:root, html, body {
+  --brand-50: #f0f1ff !important; --brand-100: #e1e4ff !important; --brand-200: #c9cdff !important; --brand-300: #a9afff !important; --brand-400: #8d97ff !important;
+  --brand-500: var(--a-accent) !important; --brand-600: var(--a-accent-hover) !important; --brand-700: #4c58d8 !important;
+  --brand-800: #3d47b0 !important; --brand-900: #2f3788 !important; --brand-950: #1a1f4d !important;
+  --accent-rgb: var(--a-accent-rgb) !important;
+  --surface-ground: var(--a-bg) !important; --surface-section: var(--a-bg2) !important; --surface-card: var(--a-panel) !important;
+  --surface-overlay: var(--a-panel) !important; --surface-elevated: var(--a-panel2) !important;
+  --text-primary: var(--a-text) !important; --text-secondary: var(--a-muted) !important; --text-tertiary: var(--a-faint) !important;
+  --sidebar-bg: var(--a-bg2) !important; --sidebar-border: var(--a-line) !important; --sidebar-fade: var(--a-bg2) !important;
+  --sidebar-item-text: var(--a-muted) !important; --sidebar-item-active-text: var(--a-text) !important;
+  --sidebar-item-hover: var(--a-hover) !important; --sidebar-item-active: var(--a-accent-soft) !important;
+  --glass-bg: var(--a-panel) !important; --glass-bg-hover: var(--a-panel2) !important; --glass-bg-active: var(--a-panel2) !important;
+  --glass-border: var(--a-line) !important; --glass-border-hover: var(--a-line2) !important; --glass-shadow: 0 8px 24px var(--a-shadow) !important;
+  --input-bg: var(--a-bg2) !important; --input-bg-hover: var(--a-panel) !important; --input-border: var(--a-line2) !important; --input-border-hover: var(--a-faint) !important;
+  --orb-opacity: 0 !important;
+  --color-success: var(--a-ok) !important; --color-warning: var(--a-warn) !important; --color-error: var(--a-err) !important; --color-info: var(--a-accent) !important;
+}
+body { font-family: var(--a-font) !important; background: var(--a-bg) !important; color: var(--a-text); }

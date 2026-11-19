@@ -1,0 +1,31 @@
+/*
+ * Allarr theme for Maintainerr (Tailwind v4). Its surfaces are the "zinc" scale and its accent is "maintainerr"
+ * (amber); both are CSS variables, so remapping them recolours every Tailwind class at once.
+ * Maintainerr is dark-only: in light mode the zinc scale is inverted.
+ */
+:root {
+  --color-zinc-950: #0a0c10 !important; --color-zinc-900: #0e1015 !important; --color-zinc-800: #171a22 !important; --color-zinc-700: #1d212b !important;
+  --color-zinc-600: #2a2f3b !important; --color-zinc-500: #353b49 !important; --color-zinc-400: #99a2b3 !important; --color-zinc-300: #c4cad6 !important;
+  --color-zinc-200: #dde1ea !important; --color-zinc-100: #eceef4 !important; --color-zinc-50: #f6f7fb !important;
+  --color-gray-900: #0e1015 !important; --color-gray-800: #171a22 !important; --color-gray-700: #1d212b !important; --color-gray-500: #6d7586 !important;
+  --color-gray-400: #99a2b3 !important; --color-gray-300: #c4cad6 !important; --color-gray-200: #dde1ea !important; --color-gray-100: #eceef4 !important;
+  --color-editor: #0e1015 !important;
+  /* accent */
+  --color-maintainerr: var(--a-accent) !important; --color-maintainerr-400: #8d97ff !important; --color-maintainerr-500: var(--a-accent) !important;
+  --color-maintainerr-600: var(--a-accent-hover) !important; --color-maintainerr-700: #4c58d8 !important;
+  --color-amber-400: #8d97ff !important; --color-amber-500: var(--a-accent) !important; --color-amber-600: var(--a-accent-hover) !important; --color-amber-700: #4c58d8 !important;
+  --color-indigo-400: #8d97ff !important; --color-indigo-500: var(--a-accent) !important;
+  --font-sans: var(--a-font) !important;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-zinc-950: #e8eaf1 !important; --color-zinc-900: #f3f4f8 !important; --color-zinc-800: #ffffff !important; --color-zinc-700: #f5f6fa !important;
+    --color-zinc-600: #e1e4ec !important; --color-zinc-500: #cfd4e0 !important; --color-zinc-400: #5a6376 !important; --color-zinc-300: #3b4252 !important;
+    --color-zinc-200: #262b36 !important; --color-zinc-100: #171a22 !important; --color-zinc-50: #0e1015 !important;
+    --color-gray-900: #f3f4f8 !important; --color-gray-800: #ffffff !important; --color-gray-700: #f5f6fa !important; --color-gray-500: #8a93a5 !important;
+    --color-gray-400: #5a6376 !important; --color-gray-300: #3b4252 !important; --color-gray-200: #262b36 !important; --color-gray-100: #171a22 !important;
+    --color-editor: #ffffff !important;
+  }
+}
+html, body { background: var(--a-bg) !important; font-family: var(--a-font) !important; }
+input, select, textarea, button { border-radius: 10px; }

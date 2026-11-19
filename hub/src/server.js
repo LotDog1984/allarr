@@ -134,6 +134,13 @@ const open = {
 const secured = {
   'GET /api/catalog': (req, res) => json(res, 200, catalog()),
 
+  'POST /api/settings/theme': async (req, res) => {
+    const { enabled } = await readJson(req);
+    store.update((s) => { s.settings = { ...s.settings, theme: !!enabled }; });
+    json(res, 200, { enabled: !!enabled });
+  },
+  'GET /api/settings/theme': (req, res) => json(res, 200, { enabled: store.get().settings?.theme !== false }),
+
   // Seerr/Wizarr keep their own port. The container can't know which HOST port was published, so let the user say.
   'POST /api/settings/addresses': async (req, res) => {
     const body = await readJson(req);

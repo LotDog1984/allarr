@@ -1,0 +1,17 @@
+/* Allarr theme for SABnzbd (Glitter skin). Glitter exposes its colours as --clr-* tokens, so this stays small. */
+:root {
+  --clr-page-bg: var(--a-bg) !important; --clr-surface: var(--a-panel) !important; --clr-surface-alt: var(--a-panel2) !important;
+  --clr-surface-hover: var(--a-line) !important; --clr-border: var(--a-line2) !important; --clr-border-subtle: var(--a-line) !important;
+  --clr-text: var(--a-text) !important; --clr-text-muted: var(--a-muted) !important; --clr-error: var(--a-err) !important;
+  --clr-input-bg: var(--a-bg2) !important; --clr-input-border: var(--a-line2) !important; --clr-dropdown-bg: var(--a-panel) !important;
+  --clr-modal-bg: var(--a-panel) !important; --clr-table-bg: var(--a-panel) !important; --clr-table-row-alt: var(--a-panel2) !important;
+  --clr-progress-track: var(--a-line2) !important; --clr-toggle-inactive: var(--a-line2) !important;
+}
+body, input, button, select, textarea, .btn { font-family: var(--a-font) !important; }
+body { background: var(--a-bg) !important; color: var(--a-text); }
+nav, .navbar { background-color: var(--a-bg2) !important; border: 0 !important; border-bottom: 1px solid var(--a-line) !important; box-shadow: none !important; }
+a, a:hover, a:focus { color: var(--a-accent); }
+.btn, .form-control, .input-group-addon { border-radius: 10px !important; }
+.btn-default, .btn-primary { background: var(--a-panel2) !important; border-color: var(--a-line2) !important; color: var(--a-text) !important; }
+.btn-primary { background: var(--a-accent) !important; border-color: var(--a-accent) !important; color: #fff !important; }
+.progress-bar { background-color: var(--a-accent) !important; }

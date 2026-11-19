@@ -1,0 +1,71 @@
+/*
+ * Allarr theme for qBittorrent's web UI (MooTools / MochaUI, no CSS variables), so this is a selector-based restyle:
+ * dark/light surfaces from the shared palette, flat controls, rounded corners. Behaviour and layout are unchanged.
+ */
+html, body, #desktop, #pageWrapper {
+  background: var(--a-bg) !important; color: var(--a-text) !important; font-family: var(--a-font) !important;
+}
+a, a:visited { color: var(--a-accent); }
+
+/* top menu + toolbar + footer */
+#desktopHeader, #desktopNavbar, #desktopFooter, #desktopFooterWrapper, #desktopTitlebarWrapper, #desktopTitlebar, #topNav, #desktopNavbar ul {
+  background: var(--a-bg2) !important; background-image: none !important; color: var(--a-muted) !important; border-color: var(--a-line) !important;
+}
+#desktopNavbar ul li a, #desktopNavbar li ul li a, #topNav a { color: var(--a-text) !important; }
+#desktopNavbar ul li a:hover, #desktopNavbar li ul li a:hover { background: var(--a-accent-soft) !important; color: var(--a-text) !important; }
+#desktopNavbar li ul { background: var(--a-panel) !important; border: 1px solid var(--a-line2) !important; border-radius: 10px; box-shadow: 0 12px 30px var(--a-shadow) !important; padding: 4px 0; }
+li.divider { border-color: var(--a-line) !important; background: transparent !important; }
+.iconWrapper:hover { background: var(--a-hover) !important; border-radius: 8px; }
+div.toolbox.divider { border-color: var(--a-line) !important; }
+
+/* panels, tab bars, filters */
+.panel, .panelAlt, .bottomPanel, #mainPanel, .panelWrapper, .panel-header, .panel-headerContent, #filtersTitle, #properties, #propertiesPanel, #prop_general, #prop_trackers {
+  background: var(--a-bg) !important; background-image: none !important; color: var(--a-text) !important; border-color: var(--a-line) !important;
+}
+.panel-header, .toolbarTabs { background: var(--a-bg2) !important; background-image: none !important; }
+.horizontalHandle, .columnHandle { background: var(--a-bg2) !important; border-color: var(--a-line) !important; }
+.tree li a, .tree li, #filters li, #filters a { color: var(--a-text) !important; }
+.selectedFilter, .selectedFilter a, #filters li.selected { background: var(--a-accent-soft) !important; color: var(--a-text) !important; border-radius: 6px; }
+.tab-menu li { background: var(--a-panel) !important; background-image: none !important; color: var(--a-muted) !important; border: 1px solid var(--a-line) !important; border-radius: 8px; margin-right: 4px; }
+.tab-menu li a { color: inherit !important; }
+.tab-menu li.selected { background: var(--a-accent) !important; border-color: var(--a-accent) !important; color: #fff !important; }
+.tab-menu li.selected a { color: #fff !important; }
+
+/* the torrent list */
+.dynamicTable tbody tr { background-color: var(--a-bg) !important; color: var(--a-text) !important; }
+.dynamicTable tbody tr:nth-child(even), .dynamicTable tbody tr.alt { background-color: var(--a-panel) !important; }
+.dynamicTable tbody tr:hover { background-color: var(--a-accent-soft) !important; color: var(--a-text) !important; }
+.dynamicTable tbody tr.selected { background-color: var(--a-accent) !important; color: #fff !important; }
+.dynamicTable th, .dynamicTable thead tr { background-color: var(--a-bg2) !important; color: var(--a-muted) !important; border-color: var(--a-line) !important; font-weight: 600; }
+.dynamicTableFixedHeaderDiv, .dynamicTableDiv { background: var(--a-bg) !important; }
+td.generalLabel, td.statusBarSeparator, label { color: var(--a-muted); }
+td.statusBarSeparator { border-color: var(--a-line) !important; }
+
+/* dialogs (MochaUI windows) and context menus */
+.mocha, .mochaContent, .mochaContentWrapper, .mochaContentBorder, .mochaToolbarWrapper, .mochaToolbar, .modal2, .mocha.no-canvas {
+  background: var(--a-panel) !important; background-image: none !important; color: var(--a-text) !important; border-color: var(--a-line2) !important;
+}
+.mochaTitlebar, .mochaTitlebar h3 { background: var(--a-bg2) !important; background-image: none !important; color: var(--a-text) !important; }
+.mocha, .modal2 { border-radius: 14px; overflow: hidden; box-shadow: 0 20px 60px var(--a-shadow) !important; }
+#modalOverlay, #windowUnderlay { background: var(--a-backdrop) !important; opacity: 1 !important; }
+.contextMenu { background: var(--a-panel) !important; border: 1px solid var(--a-line2) !important; border-radius: 10px; box-shadow: 0 12px 30px var(--a-shadow) !important; padding: 4px 0; }
+.contextMenu li a { color: var(--a-text) !important; }
+.contextMenu li a:hover { background: var(--a-accent-soft) !important; color: var(--a-text) !important; }
+.contextMenu li a.disabled { color: var(--a-faint) !important; }
+.contextMenu .separator { border-color: var(--a-line) !important; }
+
+/* form controls */
+input[type="text"], input[type="password"], input[type="number"], input[type="search"], select, textarea {
+  background: var(--a-bg2) !important; color: var(--a-text) !important; border: 1px solid var(--a-line2) !important; border-radius: 8px; padding: 3px 7px; font-family: var(--a-font);
+}
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--a-accent-soft); border-color: var(--a-accent) !important; }
+input[type="button"], input[type="submit"], button {
+  background: var(--a-panel2) !important; color: var(--a-text) !important; border: 1px solid var(--a-line2) !important; border-radius: 8px; padding: 4px 12px; cursor: pointer; font-family: var(--a-font);
+}
+input[type="button"]:hover, input[type="submit"]:hover, button:hover { border-color: var(--a-accent) !important; }
+input[type="checkbox"], input[type="radio"], progress { accent-color: var(--a-accent); }
+fieldset { border-color: var(--a-line) !important; border-radius: 10px; }
+hr { border-color: var(--a-line); }
+
+/* tab labels carry a sprite image on the inner link */
+.tab-menu li a, a.tab, .toolbarTabs a { background: transparent !important; background-image: none !important; color: inherit !important; }

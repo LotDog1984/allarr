@@ -31,6 +31,8 @@ export async function readVersion(mod) {
 }
 
 const snapshot = new Map();
+/** Last meaningful log line, so a dead app can say why on the dashboard. */
+const lastLine = (id) => sup.tail(id, 30).map((l) => l.trim()).filter(Boolean).slice(-1)[0]?.slice(0, 200) ?? null;
 export const bus = sup.bus; // 'change' events double as status triggers
 
 export function resolveState(mod, up) {
@@ -56,6 +58,7 @@ export async function refresh() {
         up,
         restarts: s.restarts,
         error: up ? null : s.error,
+        hint: up ? null : lastLine(id),
         version: up ? (prev?.version ?? (await readVersion(mod))) : null,
       };
       if (!prev || JSON.stringify(prev) !== JSON.stringify(next)) changed = true;

@@ -19,6 +19,10 @@ function paintStatus() {
     el.textContent = STATE_TEXT[st] ?? st;
     el.className = `pill ${st === 'running' ? 'pill-ok' : st === 'starting' ? 'pill-warn' : 'pill-err'}`;
   }
+  for (const el of document.querySelectorAll('[data-hint]')) {
+    const s = S.statuses.get(el.dataset.hint);
+    el.textContent = s && !s.up && s.hint && ['crashed', 'missing'].includes(s.state) ? s.hint : '';
+  }
   for (const el of document.querySelectorAll('[data-version]')) {
     const v = S.statuses.get(el.dataset.version)?.version;
     el.textContent = v ? `v${String(v).replace(/^v/, '').replace(/\.mock$/, '')}` : '';
@@ -67,9 +71,15 @@ function shell(content, active) {
 const navLink = (href, ic, label, on) => h('a', { href, class: on ? 'active' : '', 'aria-current': on ? 'page' : null }, icon(ic, 17), label);
 
 function appLink(m, on) {
-  const direct = !m.basePath;
-  return h('a', { href: direct ? '#/app/' + m.id : `#/app/${m.id}`, class: on ? 'active' : '', 'aria-current': on ? 'page' : null },
+  const link = h('a', { href: `#/app/${m.id}`, class: on ? 'active' : '', 'aria-current': on ? 'page' : null },
     badge(m, 22), m.name, h('span', { 'data-dot': m.id, class: `dot ${stateOf(m.id)}` }));
+  if (!on || !m.basePath) return link;
+  // The Hub has no top bar for embedded apps (so the app's own header is the only one); its actions live here.
+  const act = (ic, label, fn) => h('button', { class: 'nav-sub-btn', title: label, onClick: fn }, icon(ic, 14), label);
+  return [link, h('div', { class: 'nav-sub' },
+    act('logs', 'Log', () => showLogs(m)),
+    act('refresh', 'Restart', async () => { await api(`/modules/${m.id}/restart`, { method: 'POST' }); toast(`Restarting ${m.name}…`); }),
+    act('external', 'New tab', () => window.open(`${m.basePath}/`, '_blank')))];
 }
 
 const openApp = (m) => (m.basePath ? go(`#/app/${m.id}`) : window.open(exposedUrl(m.exposedPort), '_blank', 'noopener'));
@@ -114,6 +124,7 @@ function appCard(m) {
       h('div', { class: 'grow' }, h('div', { class: 'name' }, m.name), h('div', { class: 'muted small' }, m.role)),
       h('span', { 'data-state': m.id, class: 'pill' }, STATE_TEXT[stateOf(m.id)] ?? '')),
     h('div', { class: 'muted small', style: { minHeight: '38px' } }, m.blurb),
+    h('div', { class: 'error-text small', 'data-hint': m.id }),
     h('div', { class: 'actions' },
       button('Open', { kind: 'primary', iconRight: m.basePath ? 'right' : 'external', cls: 'btn-sm', onClick: () => openApp(m) }),
       button('', { kind: 'secondary', icon: 'logs', cls: 'btn-sm', title: 'View log', onClick: () => showLogs(m) })),
@@ -150,18 +161,27 @@ function appView(id) {
   const m = mod(id);
   if (!m || !S.statuses.has(id)) return h('div', { class: 'page' }, h('h2', {}, 'App not found'), h('p', { class: 'muted' }, 'That app is not enabled.'), button('Back to dashboard', { onClick: () => go('#/') }));
 
+  const menu = () => document.getElementById('sidebar').classList.toggle('open');
+  if (m.basePath) {
+    return h('div', { class: 'frame-wrap solo' },
+      h('iframe', { src: `${m.basePath}/`, title: m.name, allow: 'clipboard-write' }),
+      h('button', { class: 'menu-fab menu-btn', 'aria-label': 'Menu', onClick: menu }, icon('menu', 20)));
+  }
+
   const bar = h('div', { class: 'frame-bar' },
-    h('button', { class: 'icon-btn menu-btn', 'aria-label': 'Menu', onClick: () => document.getElementById('sidebar').classList.toggle('open') }, icon('menu', 20)),
+    h('button', { class: 'icon-btn menu-btn', 'aria-label': 'Menu', onClick: menu }, icon('menu', 20)),
     badge(m, 30), h('span', { class: 'name' }, m.name), h('span', { 'data-state': id, class: 'pill' }, STATE_TEXT[stateOf(id)] ?? ''), h('span', { class: 'grow' }),
     button('Restart', { kind: 'ghost', cls: 'btn-sm', icon: 'refresh', onClick: async () => { await api(`/modules/${id}/restart`, { method: 'POST' }); toast(`Restarting ${m.name}…`); } }),
-    button('Log', { kind: 'ghost', cls: 'btn-sm', icon: 'logs', onClick: () => showLogs(m) }),
-    m.basePath ? button('New tab', { kind: 'secondary', cls: 'btn-sm', icon: 'external', onClick: () => window.open(`${m.basePath}/`, '_blank') }) : null);
-
-  if (m.basePath) return h('div', { class: 'frame-wrap' }, bar, h('iframe', { src: `${m.basePath}/`, title: m.name, allow: 'clipboard-write' }));
+    button('Log', { kind: 'ghost', cls: 'btn-sm', icon: 'logs', onClick: () => showLogs(m) }));
+  const st = S.statuses.get(id);
 
   const url = exposedUrl(m.exposedPort);
   return h('div', { class: 'frame-wrap' }, bar,
     h('div', { class: 'page', style: { maxWidth: '720px' } },
+      st && !st.up && ['crashed', 'missing'].includes(st.state)
+        ? h('div', { class: 'notice notice-err' }, icon('alert', 18), h('div', {}, h('b', {}, `${m.name} isn't running`), st.error ?? '', st.hint ? h('div', { class: 'mono small', style: { marginTop: '6px', wordBreak: 'break-all' } }, st.hint) : null,
+          h('div', { class: 'hint' }, 'Press Log for details. Permission errors usually mean PUID/PGID should match the owner of your config and media folders.')))
+        : null,
       h('div', { class: 'card stack' },
         h('h2', {}, `${m.name} has its own address`),
         h('p', { class: 'muted' }, `${m.name} is meant for the people you share it with, so it has its own sign-in and its own port instead of living behind your admin login.`),
@@ -197,6 +217,22 @@ export function runWiring(title, request = () => api('/setup/run', { method: 'PO
 }
 
 // ─────────────────────────────────────────────────────────────────────────── settings ───
+function appearanceCard() {
+  const box = h('div', { class: 'flex' }, spinner());
+  api('/settings/theme').then(({ enabled }) => {
+    const input = h('input', { type: 'checkbox', checked: enabled, 'aria-label': "Match the apps' look to Allarr", onChange: async (e) => {
+      try {
+        await api('/settings/theme', { method: 'POST', body: { enabled: e.target.checked } });
+        toast(e.target.checked ? 'Apps now match Allarr. Reopen an app to see it.' : 'Apps use their own look again. Reopen an app to see it.', 'ok');
+      } catch (x) { e.target.checked = !e.target.checked; toast(x.message, 'error'); }
+    } });
+    fill(box, h('div', { class: 'grow' }, h('div', { style: { fontWeight: 600 } }, "Match the apps' look to Allarr"),
+      h('div', { class: 'small muted' }, 'Restyles the colours, fonts and corners of the embedded apps. Menus and features stay exactly as they are. Switch it off if something looks wrong.')),
+      h('span', { class: 'switch' }, input, h('span', { class: 'track' })));
+  }).catch(() => fill(box, h('span', { class: 'muted small' }, 'Unavailable')));
+  return h('div', { class: 'card' }, h('div', { class: 'card-title' }, icon('sparkle', 20), h('h3', {}, 'Appearance')), box);
+}
+
 function addressesCard() {
   const apps = S.catalog.modules.filter((m) => m.exposedPort != null);
   if (!apps.length || !apps.some((m) => S.statuses.has(m.id))) return null;
@@ -257,6 +293,7 @@ function settings() {
       h('div', { class: 'card-title' }, icon('bolt', 20), h('h3', {}, 'Apps'), applyBtn),
       appPicker(sel, changed)),
     h('div', { class: 'card' }, h('div', { class: 'card-title' }, icon('disk', 20), h('h3', {}, 'Storage')), sBox),
+    appearanceCard(),
     addressesCard(),
     h('div', { class: 'card' }, h('div', { class: 'card-title' }, icon('link', 20), h('h3', {}, 'Connection details'),
       button('Show', { kind: 'secondary', cls: 'btn-sm', onClick: (e) => { e.currentTarget.remove(); showConn().catch((x) => toast(x.message, 'error')); } })),

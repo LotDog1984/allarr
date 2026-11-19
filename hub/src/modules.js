@@ -26,34 +26,34 @@ export const GROUPS = [
  */
 export const MODULES = [
   {
-    id: 'sonarr', name: 'Sonarr', role: 'TV series', group: 'library', color: '#35c5f4',
+    id: 'sonarr', theme: 'servarr', name: 'Sonarr', role: 'TV series', group: 'library', color: '#35c5f4',
     blurb: 'Watches for new episodes and keeps your TV library organised.',
     port: 8989, basePath: '/sonarr', kind: 'servarr', api: 'v3', health: '/ping',
     category: 'tv', rootFolder: 'series', defaultOn: true,
     run: () => ({ cmd: path.join(binDir('sonarr'), 'Sonarr'), args: ['-nobrowser', `-data=${cfg('sonarr')}`] }),
   },
   {
-    id: 'radarr', name: 'Radarr', role: 'Movies', group: 'library', color: '#ffc230',
+    id: 'radarr', theme: 'servarr', name: 'Radarr', role: 'Movies', group: 'library', color: '#ffc230',
     blurb: 'Finds and organises your movie collection.',
     port: 7878, basePath: '/radarr', kind: 'servarr', api: 'v3', health: '/ping',
     category: 'movies', rootFolder: 'movies', defaultOn: true,
     run: () => ({ cmd: path.join(binDir('radarr'), 'Radarr'), args: ['-nobrowser', `-data=${cfg('radarr')}`] }),
   },
   {
-    id: 'lidarr', name: 'Lidarr', role: 'Music', group: 'library', color: '#00a65b',
+    id: 'lidarr', theme: 'servarr', name: 'Lidarr', role: 'Music', group: 'library', color: '#00a65b',
     blurb: 'Builds and maintains your music library.',
     port: 8686, basePath: '/lidarr', kind: 'servarr', api: 'v1', health: '/ping',
     category: 'music', rootFolder: 'music', defaultOn: true,
     run: () => ({ cmd: path.join(binDir('lidarr'), 'Lidarr'), args: ['-nobrowser', `-data=${cfg('lidarr')}`] }),
   },
   {
-    id: 'prowlarr', name: 'Prowlarr', role: 'Indexers', group: 'search', color: '#e66000',
+    id: 'prowlarr', theme: 'servarr', name: 'Prowlarr', role: 'Indexers', group: 'search', color: '#e66000',
     blurb: 'One place to add search sources. Shares them with Sonarr, Radarr and Lidarr.',
     port: 9696, basePath: '/prowlarr', kind: 'servarr', api: 'v1', health: '/ping', defaultOn: true,
     run: () => ({ cmd: path.join(binDir('prowlarr'), 'Prowlarr'), args: ['-nobrowser', `-data=${cfg('prowlarr')}`] }),
   },
   {
-    id: 'bazarr', name: 'Bazarr', role: 'Subtitles', group: 'search', color: '#a855f7',
+    id: 'bazarr', theme: 'bazarr', name: 'Bazarr', role: 'Subtitles', group: 'search', color: '#a855f7',
     blurb: 'Downloads subtitles for everything Sonarr and Radarr manage.',
     port: 6767, basePath: '/bazarr', kind: 'bazarr', health: '/', defaultOn: true,
     run: (m) => ({
@@ -62,7 +62,7 @@ export const MODULES = [
     }),
   },
   {
-    id: 'qbittorrent', name: 'qBittorrent', role: 'Torrents', group: 'download', color: '#4f8df7',
+    id: 'qbittorrent', theme: 'qbittorrent', name: 'qBittorrent', role: 'Torrents', group: 'download', color: '#4f8df7',
     blurb: 'Built-in torrent client. Pre-configured, nothing to set up.',
     port: 8081, basePath: '/qbittorrent', stripBase: true, kind: 'qbittorrent', health: '/api/v2/app/version', defaultOn: true,
     run: (m) => ({
@@ -71,7 +71,7 @@ export const MODULES = [
     }),
   },
   {
-    id: 'sabnzbd', name: 'SABnzbd', role: 'Usenet', group: 'download', color: '#f4b400',
+    id: 'sabnzbd', theme: 'sabnzbd', name: 'SABnzbd', role: 'Usenet', group: 'download', color: '#f4b400',
     blurb: 'Built-in Usenet client. Just add your provider.',
     port: 8085, basePath: '/sabnzbd', kind: 'sabnzbd', health: '/api?mode=version&output=json', defaultOn: true,
     run: (m) => ({
@@ -99,7 +99,7 @@ export const MODULES = [
     }),
   },
   {
-    id: 'maintainerr', name: 'Maintainerr', role: 'Library cleanup', group: 'cleanup', color: '#14b8a6',
+    id: 'maintainerr', theme: 'maintainerr', name: 'Maintainerr', role: 'Library cleanup', group: 'cleanup', color: '#14b8a6',
     blurb: 'Automatically removes media nobody watches anymore, with a grace period.',
     port: 6246, basePath: '/maintainerr', kind: 'maintainerr', health: '/', defaultOn: true,
     run: (m) => ({
@@ -112,7 +112,7 @@ export const MODULES = [
     }),
   },
   {
-    id: 'cleanuparr', name: 'Cleanuparr', role: 'Queue cleanup', group: 'cleanup', color: '#f97316',
+    id: 'cleanuparr', theme: 'cleanuparr', name: 'Cleanuparr', role: 'Queue cleanup', group: 'cleanup', color: '#f97316',
     blurb: 'Removes stalled, failed and unwanted downloads from your queues.',
     port: 11011, basePath: '/cleanuparr', kind: 'cleanuparr', health: '/', defaultOn: true,
     run: (m) => ({
