@@ -1,0 +1,7 @@
+**/.dev
+**/.dev-*.log
+**/node_modules
+**/*.log
+.git
+config
+media

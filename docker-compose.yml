@@ -1,0 +1,29 @@
+# Allarr: the whole *arr stack in one container, with one friendly web UI.
+#
+# Paste this into Dockge / Portainer ("Stacks" -> "Add stack") and deploy.
+# Before you deploy, change the two folders under `volumes:` (and PUID/PGID/TZ if needed).
+#
+# Then open  http://<your-server>:8080  and follow the setup wizard.
+
+services:
+  allarr:
+    image: ghcr.io/OWNER/allarr:latest
+    container_name: allarr
+    restart: unless-stopped
+    ports:
+      - "8080:8080"          # Allarr Hub: the one page you manage everything from
+      - "5055:5055"          # Seerr: requests (share this with friends and family)
+      - "5690:5690"          # Wizarr: invite links
+      - "6881:6881"          # torrent peer port
+      - "6881:6881/udp"
+    environment:
+      PUID: "1000"           # the apps run as this user/group: use the owner of your media folder
+      PGID: "1000"           #   (on most systems: run `id` and use your uid/gid)
+      TZ: "Etc/UTC"          # e.g. Europe/Berlin
+    volumes:
+      # 1) Where every app keeps its settings and databases. Back this folder up.
+      - /opt/allarr/config:/config
+      # 2) ONE folder for all your media and downloads. Allarr creates downloads/, movies/,
+      #    series/ and music/ inside it, so finished downloads are hardlinked instead of copied.
+      #    Do NOT also mount /media/downloads or /media/movies separately.
+      - /path/to/your/storage:/media

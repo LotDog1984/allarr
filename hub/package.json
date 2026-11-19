@@ -1,0 +1,17 @@
+{
+  "name": "allarr-hub",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Allarr Hub - one friendly control centre that supervises and connects the whole *arr stack inside a single container",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node dev/run.js",
+    "mock": "node dev/mock-apps.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
