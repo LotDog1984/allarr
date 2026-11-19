@@ -14,6 +14,7 @@ const defaults = () => ({
   qbittorrent: null, // { username, password }
   todos: {}, // id -> true when ticked off
   wiring: null, // last wiring run
+  updates: null, // last upstream version check
 });
 
 export function load() {

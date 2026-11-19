@@ -22,9 +22,11 @@ export async function api(path, { method = 'GET', body } = {}) {
 }
 
 /** Live status + wiring progress from the Hub (Server-Sent Events, auto-reconnects). */
-export function connectEvents({ status, wiring }) {
+export function connectEvents({ status, wiring, updates, update }) {
   const es = new EventSource('/api/events');
   es.addEventListener('status', (e) => status(JSON.parse(e.data)));
   es.addEventListener('wiring', (e) => wiring(JSON.parse(e.data)));
+  es.addEventListener('updates', (e) => updates?.(JSON.parse(e.data)));
+  es.addEventListener('update', (e) => update?.(JSON.parse(e.data)));
   return es;
 }

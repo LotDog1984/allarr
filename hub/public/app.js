@@ -1,5 +1,5 @@
 import { api, setUnauthorizedHandler, connectEvents } from './api.js';
-import { h, icon, button, badge, toast, copyText, modal, formatBytes, greeting, exposedUrl, spinner, fill } from './ui.js';
+import { h, icon, button, badge, toast, copyText, modal, formatBytes, greeting, exposedUrl, spinner, fill, timeAgo } from './ui.js';
 import { S, mod, go, refreshMe, loadCatalog, STATE_TEXT, progressList, progressSummary } from './store.js';
 import { renderLogin, renderWizard, appPicker } from './wizard.js';
 
@@ -25,6 +25,7 @@ function paintStatus() {
   }
   const sum = document.querySelector('[data-summary]');
   if (sum) fill(sum, ...summaryNodes());
+  paintUpdates();
 }
 
 function summaryNodes() {
@@ -49,6 +50,8 @@ function shell(content, active) {
         return mods.length ? [h('div', { class: 'nav-label' }, g.title), mods.map((m) => appLink(m, active === m.id))] : null;
       }),
       h('div', { class: 'nav-label' }, 'Manage'),
+      h('a', { href: '#/updates', class: active === 'updates' ? 'active' : '' }, icon('download', 17), 'Updates',
+        h('span', { class: 'count', 'data-update-count': '', hidden: true })),
       navLink('#/settings', 'settings', 'Settings', active === 'settings')),
     h('div', { class: 'foot' },
       h('div', { class: 'avatar' }, (S.me.username ?? '?')[0]),
@@ -81,6 +84,7 @@ function dashboard() {
         h('button', { class: 'icon-btn menu-btn', 'aria-label': 'Menu', onClick: () => document.getElementById('sidebar').classList.toggle('open') }, icon('menu', 20)),
         h('div', {}, h('h1', {}, `${greeting()}, ${S.me.username}`), h('div', { style: { marginTop: '8px' }, 'data-summary': '' }, summaryNodes()))),
       h('div', { class: 'flex' }, button('Re-apply connections', { kind: 'secondary', icon: 'refresh', onClick: () => runWiring('Re-applying connections') }))),
+    h('div', { 'data-update-banner': '' }, updateBanner()),
     h('div', { class: 'grid grid-2' },
       h('div', { class: 'card' }, h('div', { class: 'card-title' }, icon('disk', 20), h('h3', {}, 'Storage')), storageBox),
       h('div', { class: 'card' }, h('div', { class: 'card-title' }, icon('check', 20), h('h3', {}, 'Finish setup')), todoBox)),
@@ -113,7 +117,8 @@ function appCard(m) {
     h('div', { class: 'actions' },
       button('Open', { kind: 'primary', iconRight: m.basePath ? 'right' : 'external', cls: 'btn-sm', onClick: () => openApp(m) }),
       button('', { kind: 'secondary', icon: 'logs', cls: 'btn-sm', title: 'View log', onClick: () => showLogs(m) })),
-    h('div', { class: 'faint small', 'data-version': m.id }));
+    h('div', { class: 'flex faint small' }, h('span', { class: 'grow', 'data-version': m.id }),
+      h('button', { class: 'pill pill-warn chip-update', 'data-update': m.id, hidden: true, title: 'Review this update', onClick: () => go('#/updates') })));
 }
 
 async function loadTodos(box) {
@@ -246,6 +251,126 @@ function settings() {
       button('Run again', { kind: 'secondary', icon: 'refresh', onClick: () => runWiring('Re-applying connections') })));
 }
 
+// ───────────────────────────────────────────────────────────────────────────── updates ───
+const updItems = () => S.updates?.items ?? [];
+const updAvail = () => updItems().filter((i) => i.available);
+const updOf = (id) => updItems().find((i) => i.id === id);
+
+function paintUpdates() {
+  const n = updAvail().length;
+  for (const el of document.querySelectorAll('[data-update-count]')) {
+    el.textContent = n;
+    el.hidden = !n;
+  }
+  for (const el of document.querySelectorAll('[data-update]')) {
+    const i = updOf(el.dataset.update);
+    el.hidden = !i?.available;
+    el.textContent = i?.available ? `Update ${i.latest}` : '';
+  }
+  const banner = document.querySelector('[data-update-banner]');
+  if (banner) fill(banner, updateBanner());
+}
+
+function updateBanner() {
+  const list = updAvail();
+  if (!list.length) return null;
+  return h('div', { class: 'notice notice-warn' }, icon('download', 18),
+    h('div', { class: 'grow' }, h('b', {}, `${list.length} update${list.length > 1 ? 's' : ''} available`),
+      list.map((i) => `${mod(i.id).name} ${i.latest}`).join(' · '), h('div', { class: 'hint' }, 'Nothing is installed until you confirm.')),
+    button('Review', { kind: 'secondary', cls: 'btn-sm', onClick: () => go('#/updates') }));
+}
+
+/** Progress dialog for an in-place update; also reopens a job that is already running. */
+function jobModal(m, j) {
+  const body = h('div', { class: 'stack' });
+  const mdl = modal({ title: `Updating ${m.name}`, body, onClose: () => { S.onUpdate = null; route(true); } });
+  const paint = (job) => {
+    if (!job || job.id !== m.id) return;
+    fill(body,
+      h('p', { class: 'muted' }, `${m.name} ${job.from} → ${job.to}`),
+      progressList(job),
+      job.running ? h('div', { class: 'hint' }, `${m.name} is unavailable for a short while. It's fine to close this window; the update carries on.`) : null,
+      !job.running && job.status === 'ok' ? h('div', { class: 'notice notice-ok' }, icon('check', 18), h('div', {}, h('b', {}, 'Updated'), `${m.name} is now on ${job.to}. Your settings and library are unchanged.`)) : null,
+      !job.running && job.status === 'error' ? h('div', { class: 'notice notice-err' }, icon('alert', 18), h('div', {}, h('b', {}, job.rolledBack ? 'Update failed, nothing was lost' : 'Update failed'), job.detail || 'Something went wrong.')) : null,
+      !job.running ? h('div', { class: 'flex', style: { justifyContent: 'flex-end' } }, button('Done', { kind: 'primary', onClick: mdl.close })) : null);
+  };
+  S.onUpdate = paint;
+  paint(j);
+}
+
+function confirmUpdate(i) {
+  const m = mod(i.id);
+  const body = h('div', { class: 'stack' });
+  const mdl = modal({ title: `Update ${m.name} to ${i.latest}?`, body });
+  const go1 = button(`Update ${m.name}`, { kind: 'primary', icon: 'download', onClick: async () => {
+    go1.disabled = true;
+    try {
+      const job = await api('/updates/apply', { method: 'POST', body: { id: i.id, version: i.latest } });
+      mdl.close();
+      // Live events may already be ahead of this reply (e.g. a failure within milliseconds): use the freshest state.
+      jobModal(m, S.job?.startedAt === job.startedAt ? S.job : job);
+    } catch (e) {
+      go1.disabled = false;
+      toast(e.message, 'error');
+    }
+  } });
+  fill(body,
+    h('p', { class: 'muted' }, `You're on ${i.current}. This installs ${i.latest}${i.date ? `, released ${new Date(i.date).toLocaleDateString()}` : ''}.`),
+    i.changes?.length ? h('div', {}, h('div', { class: 'small', style: { fontWeight: 600 } }, "What's new"), h('ul', { class: 'changes' }, i.changes.slice(0, 5).map((c) => h('li', {}, c)))) : null,
+    h('div', { class: 'stack small' },
+      [['download', "Allarr downloads it and checks the file's checksum."],
+        ['disk', `${m.name} is stopped briefly (about a minute) and its database is backed up first.`],
+        ['shield', `If the new version doesn't start, Allarr automatically goes back to ${i.current}.`]]
+        .map(([ic, t]) => h('div', { class: 'flex', style: { alignItems: 'flex-start' } }, h('span', { class: 'ic ok' }, icon(ic, 14)), h('span', {}, t)))),
+    i.notes ? h('a', { href: i.notes, target: '_blank', rel: 'noopener noreferrer', class: 'small' }, 'Full release notes') : null,
+    h('div', { class: 'flex', style: { justifyContent: 'flex-end' } }, button('Cancel', { kind: 'ghost', onClick: mdl.close }), go1));
+}
+
+function updateRow(i) {
+  const m = mod(i.id);
+  let action;
+  if (i.available && i.inPlace) action = button('Update…', { kind: 'primary', cls: 'btn-sm', onClick: () => confirmUpdate(i) });
+  else if (i.available) action = h('span', { class: 'pill pill-warn' }, 'Needs a new image');
+  else if (i.error) action = h('span', { class: 'pill pill-err' }, 'Check failed');
+  else action = h('span', { class: 'pill pill-ok' }, icon('check', 12), 'Up to date');
+  return h('div', { class: 'upd-row' }, badge(m, 40),
+    h('div', { class: 'grow' },
+      h('div', { style: { fontWeight: 650 } }, m.name, h('span', { class: 'faint', style: { fontWeight: 400 } }, `  ·  ${m.role}`)),
+      h('div', { class: 'small muted' },
+        i.error ? `Couldn't check: ${i.error}` : i.available ? `${i.current ?? 'unknown'} → ${i.latest}${i.date ? `  ·  ${new Date(i.date).toLocaleDateString()}` : ''}` : `Version ${i.current ?? 'unknown'}`),
+      i.available && i.changes?.length ? h('ul', { class: 'changes' }, i.changes.slice(0, 3).map((c) => h('li', {}, c))) : null,
+      i.available && !i.inPlace ? h('div', { class: 'hint', style: { marginTop: '6px' } }, `${m.name} is compiled into the image, so it updates when you redeploy the latest image.`) : null,
+      i.available && i.notes ? h('a', { href: i.notes, target: '_blank', rel: 'noopener noreferrer', class: 'small' }, 'Release notes') : null),
+    action);
+}
+
+function updatesPage() {
+  const items = updItems();
+  const avail = items.filter((i) => i.available);
+  const rest = items.filter((i) => !i.available);
+  const checkBtn = button('Check now', { kind: 'secondary', icon: 'refresh', onClick: async (e) => {
+    e.currentTarget.disabled = true;
+    try { S.updates = await api('/updates/check', { method: 'POST' }); } catch (x) { toast(x.message, 'error'); }
+    route(false);
+  } });
+  const applying = S.updates?.applying && mod(S.updates.applying);
+  return h('div', { class: 'page', style: { maxWidth: '900px' } },
+    h('div', { class: 'page-head' },
+      h('div', { class: 'flex', style: { alignItems: 'flex-start' } },
+        h('button', { class: 'icon-btn menu-btn', 'aria-label': 'Menu', onClick: () => document.getElementById('sidebar').classList.toggle('open') }, icon('menu', 20)),
+        h('div', {}, h('h1', {}, 'Updates'), h('p', { class: 'muted', style: { marginTop: '6px' } }, 'Allarr checks for new versions every few hours. Nothing is installed until you say so.'))),
+      h('div', { class: 'flex' }, h('span', { class: 'faint small' }, S.updates?.checkedAt ? `Checked ${timeAgo(S.updates.checkedAt)}` : 'Not checked yet'), checkBtn)),
+    applying ? h('div', { class: 'notice notice-warn' }, icon('refresh', 18), h('div', { class: 'grow' }, h('b', {}, `Updating ${applying.name}…`), 'An update is in progress.'),
+      button('View progress', { kind: 'secondary', cls: 'btn-sm', onClick: () => jobModal(applying, S.job) })) : null,
+    !items.length ? h('div', { class: 'card muted' }, 'No version information yet. Press "Check now".') : null,
+    avail.length ? h('div', { class: 'card' }, h('div', { class: 'card-title' }, icon('download', 20), h('h3', {}, `${avail.length} update${avail.length > 1 ? 's' : ''} available`)), avail.map(updateRow))
+      : items.length ? h('div', { class: 'notice notice-ok' }, icon('check', 18), h('div', {}, h('b', {}, 'Everything is up to date'), 'Nothing to do right now.')) : null,
+    rest.length ? h('div', { class: 'card' }, h('div', { class: 'card-title' }, icon('check', 20), h('h3', {}, 'Up to date')), rest.map(updateRow)) : null,
+    h('div', { class: 'card stack' }, h('div', { class: 'card-title' }, icon('info', 20), h('h3', {}, 'How updates work')),
+      h('p', { class: 'small muted' }, 'Sonarr, Radarr, Lidarr and Prowlarr can be updated right here: Allarr downloads the new version, backs up the database and restarts the app, and rolls back by itself if the new version fails to start.'),
+      h('p', { class: 'small muted' }, 'Everything else (Bazarr, SABnzbd, Seerr, Wizarr, Maintainerr, Cleanuparr, qBittorrent) is part of the container image. When one of them is listed above, redeploy your stack with the latest image: Dockge → Update, Portainer → "Pull and redeploy", or recreate the container. Your settings live in /config and are kept.')));
+}
+
 // ───────────────────────────────────────────────────────────────────────────── router ───
 let booted = false;
 
@@ -258,6 +383,7 @@ async function route(force = false) {
 
   if (!booted || force) {
     await loadCatalog();
+    S.updates = await api('/updates').catch(() => null);
     if (!es) startEvents();
     booted = true;
   }
@@ -274,6 +400,7 @@ async function route(force = false) {
     return paintStatus();
   }
   if (a === 'settings') { shell(settings(), 'settings'); return paintStatus(); }
+  if (a === 'updates') { shell(updatesPage(), 'updates'); return paintStatus(); }
   shell(dashboard(), 'home');
   paintStatus();
 }
@@ -289,6 +416,12 @@ function startEvents() {
       if (document.getElementById('sidebar') && ids !== [...S.statuses.keys()].sort().join() && !document.querySelector('.overlay')) route(false);
     },
     wiring: (w) => { S.wiring = w; S.onWiring?.(w); },
+    updates: (u) => {
+      S.updates = u;
+      paintUpdates();
+      if (location.hash === '#/updates' && !document.querySelector('.overlay')) route(false);
+    },
+    update: (j) => { S.job = j; S.onUpdate?.(j); },
   });
 }
 

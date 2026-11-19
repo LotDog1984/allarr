@@ -14,12 +14,18 @@ if (process.argv.includes('--reset')) fs.rmSync(dev, { recursive: true, force: t
 fs.mkdirSync(path.join(dev, 'config'), { recursive: true });
 fs.mkdirSync(path.join(dev, 'media'), { recursive: true });
 
+// versions "baked into the image", so the update page can show an image-only update (Bazarr) as well
+fs.mkdirSync(path.join(dev, 'opt'), { recursive: true });
+fs.writeFileSync(path.join(dev, 'opt', 'versions.json'), JSON.stringify({ bazarr: '1.0.0' }));
+
 const env = {
   ...process.env,
   ALLARR_DEV: '1',
   ALLARR_SUPERVISE: '0',
   ALLARR_PORT: process.env.ALLARR_PORT || '8088',
   ALLARR_PORT_OFFSET: '20000',
+  ALLARR_UPDATES_FAKE: '1', // pretend newer versions exist so the update UI can be tried without the network
+  ALLARR_APPS_DIR: path.join(dev, 'opt'),
   ALLARR_CONFIG_DIR: path.join(dev, 'config'),
   ALLARR_MEDIA_DIR: path.join(dev, 'media'),
 };

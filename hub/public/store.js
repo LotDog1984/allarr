@@ -9,6 +9,9 @@ export const S = {
   wiring: null, // latest wiring snapshot
   answers: {},
   onWiring: null, // the visible progress view subscribes here
+  updates: null, // { checkedAt, items:[{id,current,latest,available,inPlace,...}], count, applying }
+  job: null, // the in-place update that is running / just ran
+  onUpdate: null, // the visible update-progress view subscribes here
 };
 
 export const mod = (id) => S.catalog.modules.find((m) => m.id === id);

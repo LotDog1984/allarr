@@ -1,0 +1,40 @@
+name: Bump pinned app versions
+
+# Seerr, Maintainerr, Wizarr, SABnzbd and Cleanuparr are pinned in the Dockerfile for reproducible builds.
+# Once a week this opens a pull request when upstream has released something newer.
+# Nothing is built or published until you merge it, so the merge is your confirmation.
+#
+# One-time setup: Settings -> Actions -> General -> Workflow permissions ->
+#   tick "Allow GitHub Actions to create and approve pull requests".
+on:
+  schedule:
+    - cron: "0 5 * * 2"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Look for newer releases
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/bump-versions.mjs
+      - name: Open a pull request
+        if: hashFiles('bump-summary.md') != ''
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: bump/upstream-versions
+          delete-branch: true
+          add-paths: Dockerfile
+          commit-message: "Bump pinned upstream versions"
+          title: "Bump pinned upstream versions"
+          body-path: bump-summary.md
+          labels: dependencies

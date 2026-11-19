@@ -15,7 +15,7 @@ export async function probe(mod) {
   }
 }
 
-async function readVersion(mod) {
+export async function readVersion(mod) {
   const key = store.get().modules[mod.id]?.apiKey;
   try {
     const get = async (p, headers = {}) =>
@@ -73,6 +73,8 @@ export async function refresh() {
 }
 
 export const statuses = () => [...snapshot.values()];
+/** Drop the cached version so the next poll re-reads it (after an update). */
+export const forgetVersion = (id) => snapshot.delete(id);
 
 export function startPoller(onChange) {
   let busy = false;

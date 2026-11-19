@@ -26,6 +26,25 @@ Open **http://your-server:8080** and follow the setup wizard (about two minutes)
 Afterwards the dashboard shows each app's status, your storage health, and a short **Finish setup** checklist for
 the things only a human can do (adding indexers, signing in to your media server, choosing subtitle languages).
 
+## Updates (always with your confirmation)
+
+Allarr never updates anything by itself.
+
+* **Badge + Updates page.** Every few hours the Hub asks upstream for the newest version of each app. New versions
+  show up as a badge in the sidebar, a banner on the dashboard and a chip on the app's card.
+* **Sonarr, Radarr, Lidarr and Prowlarr update in place.** Press *Update…*, read what will happen, confirm. The Hub
+  downloads the release, verifies its checksum, stops the app, backs up its database (`/config/allarr/backups`),
+  switches to the new files (`/config/allarr/apps`) and verifies that it starts. If it doesn't, the old version and
+  database are restored automatically. No image rebuild or redeploy needed.
+* **Everything else is part of the image** (Bazarr, SABnzbd, Seerr, Wizarr, Maintainerr, Cleanuparr, qBittorrent).
+  The badge says so; update by redeploying with the latest image (Dockge: *Update*, Portainer: *Pull and redeploy*).
+* **The image rebuilds itself.** GitHub Actions publishes a fresh image every Monday (picking up new
+  Sonarr/Radarr/Lidarr/Prowlarr/Bazarr releases). The versions pinned in the Dockerfile are bumped by a weekly pull
+  request ([bump-versions.yml](.github/workflows/bump-versions.yml)); merging it is your confirmation. Enable
+  *Settings → Actions → General → "Allow GitHub Actions to create and approve pull requests"* once for that.
+* When a rebuilt image is newer than an in-place update, the Hub notices at startup and drops its own copy.
+* A failed image build never replaces `latest`. To roll back, pin `ghcr.io/lotdog1984/allarr:sha-<commit>`.
+
 ## One folder, hardlinks
 
 ```
@@ -99,7 +118,8 @@ Verified (Docker, amd64, fresh volumes, full wizard flow through the API):
   Seerr keeps the pre-added Sonarr/Radarr after its restart.
 * Every admin app is reachable only through the Hub login (401 without it), and the real Sonarr UI renders
   inside the Hub frame.
-* 7 unit tests (`cd hub && npm test`) plus a mock-app dev setup for working on the GUI without Docker.
+* 14 unit tests (`cd hub && npm test`), including the whole in-place update flow with mocked upstreams, plus a
+  mock-app dev setup for working on the GUI without Docker.
 
 Not verified yet:
 

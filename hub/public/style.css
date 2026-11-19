@@ -207,3 +207,12 @@ pre.log { margin: 0; font: 12.5px/1.55 var(--mono); color: var(--muted); backgro
   .stepper .s span { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+
+/* ---------- updates ---------- */
+.nav a .count { margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 99px; background: var(--warn); color: #1c1500; font: 700 12px/20px var(--font); text-align: center; }
+.nav a .count[hidden] { display: none; }
+.chip-update { cursor: pointer; border: 0; font-family: var(--font); }
+.chip-update[hidden] { display: none; }
+.upd-row { display: flex; gap: 14px; align-items: flex-start; padding: 16px 0; border-top: 1px solid var(--line); }
+.upd-row:first-of-type { border-top: 0; padding-top: 4px; }
+.changes { margin: 8px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; }

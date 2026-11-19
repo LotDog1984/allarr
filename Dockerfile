@@ -18,15 +18,23 @@ ARG CLEANUPARR_VERSION=2.11.1
 FROM debian:bookworm-slim AS fetch
 ARG TARGETARCH
 ARG CLEANUPARR_VERSION
-RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates unzip \
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates unzip jq \
  && rm -rf /var/lib/apt/lists/*
 WORKDIR /out
-RUN set -eux; case "$TARGETARCH" in amd64) echo x64 > /arch;; arm64) echo arm64 > /arch;; *) echo "unsupported arch $TARGETARCH" >&2; exit 1;; esac
-RUN set -eux; mkdir sonarr && curl -fsSL "https://services.sonarr.tv/v1/download/main/latest?version=4&os=linux&arch=$(cat /arch)" | tar xz -C sonarr --strip-components=1
-RUN set -eux; mkdir radarr && curl -fsSL "https://radarr.servarr.com/v1/update/master/updatefile?os=linux&runtime=netcore&arch=$(cat /arch)" | tar xz -C radarr --strip-components=1
-RUN set -eux; mkdir lidarr && curl -fsSL "https://lidarr.servarr.com/v1/update/master/updatefile?os=linux&runtime=netcore&arch=$(cat /arch)" | tar xz -C lidarr --strip-components=1
-RUN set -eux; mkdir prowlarr && curl -fsSL "https://prowlarr.servarr.com/v1/update/master/updatefile?os=linux&runtime=netcore&arch=$(cat /arch)" | tar xz -C prowlarr --strip-components=1
-RUN set -eux; curl -fsSL -o bazarr.zip https://github.com/morpheus65535/bazarr/releases/latest/download/bazarr.zip && unzip -q bazarr.zip -d bazarr && rm bazarr.zip
+RUN set -eux; case "$TARGETARCH" in amd64) echo x64 > /arch;; arm64) echo arm64 > /arch;; *) echo "unsupported arch $TARGETARCH" >&2; exit 1;; esac; echo '{}' > versions.json
+# Each app records its exact version in versions.json. The Hub uses it to show "update available" and to
+# notice when a rebuilt image has caught up with an in-place update.
+RUN set -eux; mkdir sonarr; R="$(curl -fsSL https://services.sonarr.tv/v1/releases)"; \
+    V="$(echo "$R" | jq -r '.["v4-stable"].version')"; U="$(echo "$R" | jq -r --arg a "$(cat /arch)" '.["v4-stable"].linux[$a].archive.url')"; \
+    curl -fsSL "$U" | tar xz -C sonarr --strip-components=1; jq --arg v "$V" '.sonarr=$v' versions.json > v.tmp && mv v.tmp versions.json
+RUN set -eux; for app in radarr lidarr prowlarr; do mkdir $app; \
+    V="$(curl -fsSL "https://$app.servarr.com/v1/update/master/changes?os=linux&runtime=netcore&arch=$(cat /arch)" | jq -r '.[0].version')"; \
+    curl -fsSL "https://$app.servarr.com/v1/update/master/updatefile?version=$V&os=linux&runtime=netcore&arch=$(cat /arch)" | tar xz -C $app --strip-components=1; \
+    jq --arg a "$app" --arg v "$V" '.[$a]=$v' versions.json > v.tmp && mv v.tmp versions.json; done
+RUN set -eux; \
+    V="$(curl -fsSIL -o /dev/null -w '%{url_effective}' https://github.com/morpheus65535/bazarr/releases/latest | sed 's#.*/tag/v\{0,1\}##')"; \
+    curl -fsSL -o bazarr.zip "https://github.com/morpheus65535/bazarr/releases/download/v$V/bazarr.zip" && unzip -q bazarr.zip -d bazarr && rm bazarr.zip; \
+    jq --arg v "$V" '.bazarr=$v' versions.json > v.tmp && mv v.tmp versions.json; cat versions.json
 RUN set -eux; curl -fsSL -o cu.zip "https://github.com/Cleanuparr/Cleanuparr/releases/download/v${CLEANUPARR_VERSION}/Cleanuparr-${CLEANUPARR_VERSION}-linux-${TARGETARCH}.zip" \
  && unzip -q cu.zip && mv "Cleanuparr-${CLEANUPARR_VERSION}-linux-${TARGETARCH}" cleanuparr && rm cu.zip \
  && chmod +x cleanuparr/Cleanuparr
@@ -84,6 +92,9 @@ RUN yarn workspaces focus --all --production \
 FROM node:22-bookworm-slim AS runtime
 ARG SABNZBD_VERSION
 ARG WIZARR_VERSION
+ARG SEERR_VERSION
+ARG MAINTAINERR_VERSION
+ARG CLEANUPARR_VERSION
 ENV DEBIAN_FRONTEND=noninteractive
 
 # .NET runtime libs, Python, the torrent client, Usenet extraction tools, and Maintainerr's image libs.
@@ -105,6 +116,10 @@ COPY --from=fetch /out/lidarr     /opt/lidarr
 COPY --from=fetch /out/prowlarr   /opt/prowlarr
 COPY --from=fetch /out/bazarr     /opt/bazarr
 COPY --from=fetch /out/cleanuparr /opt/cleanuparr
+# What's in this image, for the Hub's update checks (the fetch stage recorded the downloaded apps).
+COPY --from=fetch /out/versions.json /opt/versions.json
+RUN V_SAB="$SABNZBD_VERSION" V_WIZ="$WIZARR_VERSION" V_SEERR="$SEERR_VERSION" V_MAIN="$MAINTAINERR_VERSION" V_CLEAN="$CLEANUPARR_VERSION" \
+    node -e "const fs=require('fs'),e=process.env,f='/opt/versions.json',v=JSON.parse(fs.readFileSync(f));Object.assign(v,{sabnzbd:e.V_SAB,wizarr:e.V_WIZ,seerr:e.V_SEERR,maintainerr:e.V_MAIN,cleanuparr:e.V_CLEAN});fs.writeFileSync(f,JSON.stringify(v))"
 # Cleanuparr hardcodes <app dir>/config; keep its state in /config/cleanuparr like every other app.
 RUN rm -rf /opt/cleanuparr/config && ln -s /config/cleanuparr /opt/cleanuparr/config  && mkdir -p /opt/bazarr/bin && chmod -R a+rwX /opt/bazarr/bin
 

@@ -5,10 +5,12 @@ import { config } from './config.js';
 import * as store from './state.js';
 import * as storage from './storage.js';
 import * as stack from './stack.js';
+import * as seed from './seed.js';
 import * as health from './health.js';
 import * as sup from './supervisor.js';
 import { byId, baseUrl, MODULES } from './modules.js';
 import { arr, call, keyOf, upsertWithSchema, ApiError } from './arr.js';
+import { canWrite, fixHint } from './perms.js';
 
 /**
  * The wiring engine. This is what replaces "open 12 web UIs and paste API keys between them".
@@ -46,6 +48,11 @@ async function each(items, label, fn) {
 }
 
 const name = (id) => byId[id].name;
+/** The last couple of log lines, so a failed start says WHY right in the wizard. */
+const lastLog = (id) => {
+  const lines = sup.tail(id, 40).map((l) => l.trim()).filter(Boolean).slice(-2);
+  return lines.length ? `\n    ↳ ${lines.map((l) => l.slice(0, 180)).join('\n    ↳ ')}` : '';
+};
 const mediaPath = (rel) => `${config.mediaDir.replace(/\\/g, '/')}/${rel}`;
 const norm = (p) => p.replace(/[\\/]+$/, '');
 
@@ -61,6 +68,13 @@ const steps = {
   },
 
   async start(ctx) {
+    // Fail early and clearly if the apps (running as PUID:PGID) can't write to their own folders.
+    const ids0 = ctx.ids.filter((id) => id !== 'seerr');
+    for (const id of ids0) seed.prepare(byId[id]); // creates /config/<app> and hands it to the app user
+    const blocked = ids0.map((id) => path.join(config.configDir, id)).filter((d) => fs.existsSync(d) && !canWrite(d));
+    if (blocked.length) {
+      throw new Error(`The apps run as ${config.puid}:${config.pgid ?? config.puid} but can't write to ${blocked.join(', ')}. ${fixHint(blocked[0])}`);
+    }
     const ids = ctx.ids.filter((id) => id !== 'seerr'); // Seerr starts last, once it has something to talk to
     for (const id of ids) stack.startModule(id);
     return { status: 'ok', detail: ids.map((id) => `✓ ${name(id)}`).join('\n') };
@@ -77,7 +91,7 @@ const steps = {
     const lines = ids.map((id) =>
       ctx.up.has(id)
         ? `✓ ${name(id)} is ready`
-        : `✗ ${name(id)} didn't start${sup.info(id).error ? ` (${sup.info(id).error})` : ' — check its log in Settings'}`,
+        : `✗ ${name(id)} didn't start${sup.info(id).error ? ` (${sup.info(id).error})` : ' — check its log in Settings'}${lastLog(id)}`,
     );
     return { status: !down.length ? 'ok' : down.length === ids.length ? 'error' : 'warn', detail: lines.join('\n') };
   },

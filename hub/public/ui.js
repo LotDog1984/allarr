@@ -133,6 +133,15 @@ export function formatBytes(n) {
   return `${n >= 100 || i === 0 ? Math.round(n) : n.toFixed(1)} ${u[i]}`;
 }
 
+export function timeAgo(ts) {
+  const s = Math.max(0, Math.round((Date.now() - ts) / 1000));
+  if (s < 60) return 'just now';
+  const m = Math.round(s / 60);
+  if (m < 60) return `${m} min ago`;
+  const hr = Math.round(m / 60);
+  return hr < 48 ? `${hr} h ago` : `${Math.round(hr / 24)} days ago`;
+}
+
 export const greeting = () => {
   const hr = new Date().getHours();
   return hr < 5 ? 'Still up' : hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening';

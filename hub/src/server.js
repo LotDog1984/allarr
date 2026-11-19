@@ -10,6 +10,7 @@ import * as health from './health.js';
 import * as sup from './supervisor.js';
 import * as wiring from './wire.js';
 import * as todos from './todos.js';
+import * as updates from './updates.js';
 import { proxyHttp, proxyUpgrade } from './proxy.js';
 import { GROUPS, MODULES, byId, publicInfo, baseUrl } from './modules.js';
 import { keyOf } from './arr.js';
@@ -66,6 +67,8 @@ const broadcast = (event, data) => {
   for (const c of clients) c.write(msg);
 };
 wiring.events.on('wiring', (w) => broadcast('wiring', w));
+updates.events.on('updates', (u) => broadcast('updates', u));
+updates.events.on('job', (j) => broadcast('update', j));
 
 function statusPayload() {
   return health.statuses();
@@ -141,6 +144,19 @@ const secured = {
   'GET /api/status': (req, res) => json(res, 200, { modules: statusPayload(), setupComplete: store.get().setup.complete }),
 
   'GET /api/events': serveEvents,
+
+  // Updates: checking is automatic, installing only ever happens after the user confirms the exact version.
+  'GET /api/updates': (req, res) => json(res, 200, updates.summary()),
+  'POST /api/updates/check': async (req, res) => json(res, 200, await updates.check()),
+  'GET /api/updates/job': (req, res) => json(res, 200, updates.currentJob()),
+  'POST /api/updates/apply': async (req, res) => {
+    const { id, version } = await readJson(req);
+    try {
+      json(res, 202, await updates.apply(id, version));
+    } catch (e) {
+      fail(res, 409, e.message);
+    }
+  },
 
   'GET /api/todos': (req, res) => json(res, 200, todos.list()),
 
@@ -262,11 +278,13 @@ server.listen(config.port, config.host, () => {
   console.log(`Allarr Hub ${config.version} listening on http://${config.host}:${config.port}`);
   console.log(`  config: ${config.configDir}   media: ${config.mediaDir}   supervise: ${config.supervise}`);
   if (store.get().setup.complete) {
+    updates.reconcile(); // drop in-place copies that a newer image has overtaken
     console.log('  starting your apps…');
     stack.startAll();
   }
 });
 health.startPoller((s) => broadcast('status', s));
+updates.schedule();
 
 for (const sig of ['SIGTERM', 'SIGINT']) {
   process.on(sig, async () => {

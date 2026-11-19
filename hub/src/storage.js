@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { config } from './config.js';
+import { canWrite, fixHint, giveToApps } from './perms.js';
 
 /**
  * One mount, one filesystem. Everything lives under /media so the *arr apps can HARDLINK
@@ -23,12 +24,8 @@ export const LAYOUT = [
 
 export const media = (...p) => path.join(config.mediaDir, ...p);
 
-export function chownPath(p) {
-  if (process.getuid?.() !== 0 || config.puid === undefined) return;
-  try {
-    fs.chownSync(p, config.puid, config.pgid ?? config.puid);
-  } catch { /* best effort */ }
-}
+/** Give a path to the app user, or open its permissions if the filesystem won't let us chown. */
+export const chownPath = giveToApps;
 
 export function ensureLayout() {
   fs.mkdirSync(config.mediaDir, { recursive: true });
@@ -129,6 +126,18 @@ export function check() {
         });
       }
     } catch { /* ignore */ }
+  }
+
+  // The Hub is root, so the test above proves nothing about the apps (they run as PUID:PGID). Test as them.
+  for (const dir of [media('downloads'), media('movies'), media('series'), media('music')]) {
+    if (fs.existsSync(dir) && !canWrite(dir)) {
+      issues.push({
+        level: 'error', code: 'APPS_CANNOT_WRITE',
+        message: `The apps run as user ${config.puid ?? 'the container user'}:${config.pgid ?? config.puid ?? ''} but cannot write to ${dir}.`,
+        fix: fixHint(dir),
+      });
+      break;
+    }
   }
 
   if (result.writable) {

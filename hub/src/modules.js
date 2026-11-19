@@ -1,8 +1,11 @@
 import path from 'node:path';
 import { config } from './config.js';
+import * as store from './state.js';
 
 const app = (...p) => path.join(config.appsDir, ...p);
 const cfg = (...p) => path.join(config.configDir, ...p);
+/** Where an app's files live: the image's copy, or the copy installed by a confirmed in-place update. */
+export const binDir = (id) => store.get().modules[id]?.override?.dir ?? path.join(config.appsDir, id);
 
 export const GROUPS = [
   { id: 'library', title: 'Your libraries', blurb: 'Find, grab and organise your media' },
@@ -27,27 +30,27 @@ export const MODULES = [
     blurb: 'Watches for new episodes and keeps your TV library organised.',
     port: 8989, basePath: '/sonarr', kind: 'servarr', api: 'v3', health: '/ping',
     category: 'tv', rootFolder: 'series', defaultOn: true,
-    run: () => ({ cmd: app('sonarr', 'Sonarr'), args: ['-nobrowser', `-data=${cfg('sonarr')}`] }),
+    run: () => ({ cmd: path.join(binDir('sonarr'), 'Sonarr'), args: ['-nobrowser', `-data=${cfg('sonarr')}`] }),
   },
   {
     id: 'radarr', name: 'Radarr', role: 'Movies', group: 'library', color: '#ffc230',
     blurb: 'Finds and organises your movie collection.',
     port: 7878, basePath: '/radarr', kind: 'servarr', api: 'v3', health: '/ping',
     category: 'movies', rootFolder: 'movies', defaultOn: true,
-    run: () => ({ cmd: app('radarr', 'Radarr'), args: ['-nobrowser', `-data=${cfg('radarr')}`] }),
+    run: () => ({ cmd: path.join(binDir('radarr'), 'Radarr'), args: ['-nobrowser', `-data=${cfg('radarr')}`] }),
   },
   {
     id: 'lidarr', name: 'Lidarr', role: 'Music', group: 'library', color: '#00a65b',
     blurb: 'Builds and maintains your music library.',
     port: 8686, basePath: '/lidarr', kind: 'servarr', api: 'v1', health: '/ping',
     category: 'music', rootFolder: 'music', defaultOn: true,
-    run: () => ({ cmd: app('lidarr', 'Lidarr'), args: ['-nobrowser', `-data=${cfg('lidarr')}`] }),
+    run: () => ({ cmd: path.join(binDir('lidarr'), 'Lidarr'), args: ['-nobrowser', `-data=${cfg('lidarr')}`] }),
   },
   {
     id: 'prowlarr', name: 'Prowlarr', role: 'Indexers', group: 'search', color: '#e66000',
     blurb: 'One place to add search sources. Shares them with Sonarr, Radarr and Lidarr.',
     port: 9696, basePath: '/prowlarr', kind: 'servarr', api: 'v1', health: '/ping', defaultOn: true,
-    run: () => ({ cmd: app('prowlarr', 'Prowlarr'), args: ['-nobrowser', `-data=${cfg('prowlarr')}`] }),
+    run: () => ({ cmd: path.join(binDir('prowlarr'), 'Prowlarr'), args: ['-nobrowser', `-data=${cfg('prowlarr')}`] }),
   },
   {
     id: 'bazarr', name: 'Bazarr', role: 'Subtitles', group: 'search', color: '#a855f7',
