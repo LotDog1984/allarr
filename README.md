@@ -89,6 +89,7 @@ The Hub verifies this with a real test on the Storage step and shows a clear war
 | Indexers | Prowlarr linked to Sonarr, Radarr and Lidarr with full sync. |
 | Cloudflare | FlareSolverr added to Prowlarr as an indexer proxy, with a `flaresolverr` tag. Give that tag to any indexer Prowlarr says is Cloudflare-protected and its searches go through FlareSolverr. Only tagged indexers use it, so everything else stays fast. |
 | Subtitles | Bazarr linked to Sonarr and Radarr. |
+| Subtitle sync (optional) | **Settings → Subtitle sync**: syncs every subtitle Bazarr downloads with a subtitle track embedded in the video instead of the audio. Bazarr's own automatic sync can only use the audio; Bazarr can run a command after each download, so the Hub points that at `embedded-sync.js`, which lets Bazarr's own ffsubsync align the file to the best embedded text track (same language first; forced, signs-only and picture-based tracks are ignored). Videos without usable embedded subtitles are left alone, and so is the subtitle if anything fails. Turning it on also switches Bazarr's audio sync off, and it never overwrites a post-processing command you set yourself. Off by default. |
 | Quality profiles | Sonarr and Radarr added to Profilarr (it has no API for this, so the Hub writes the same two rows its own "add instance" code does; if that ever fails the checklist says how to add them by hand). |
 | Requests | Sonarr and Radarr pre-added to Seerr. |
 | Usenet | Your provider added to SABnzbd (optional). |

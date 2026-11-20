@@ -246,6 +246,24 @@ function appearanceCard() {
   return h('div', { class: 'card' }, h('div', { class: 'card-title' }, icon('sparkle', 20), h('h3', {}, 'Appearance')), box);
 }
 
+function subtitleSyncCard() {
+  if (!S.statuses.has('bazarr')) return null;
+  const box = h('div', { class: 'flex' }, spinner());
+  api('/settings/subtitle-sync').then(({ mode }) => {
+    const input = h('input', { type: 'checkbox', checked: mode === 'embedded', 'aria-label': "Sync new subtitles with the video's embedded subtitles", onChange: async (e) => {
+      const want = e.target.checked;
+      try {
+        const r = await api('/settings/subtitle-sync', { method: 'POST', body: { mode: want ? 'embedded' : 'off' } });
+        toast(r.message ? `Bazarr: ${r.message}` : want ? 'Saved' : 'Switched off', 'ok');
+      } catch (x) { e.target.checked = !want; toast(x.message, 'error'); }
+    } });
+    fill(box, h('div', { class: 'grow' }, h('div', { style: { fontWeight: 600 } }, "Sync new subtitles with the video's embedded subtitles"),
+      h('div', { class: 'small muted' }, "Bazarr's own automatic sync can only listen to the audio, which is often off. With this on, every subtitle Bazarr downloads is lined up with a subtitle track already inside the video (same language if there is one). Videos with no usable embedded subtitles are left alone. It also switches Bazarr's audio sync off.")),
+      h('span', { class: 'switch' }, input, h('span', { class: 'track' })));
+  }).catch(() => fill(box, h('span', { class: 'muted small' }, 'Unavailable')));
+  return h('div', { class: 'card' }, h('div', { class: 'card-title' }, icon('captions', 20), h('h3', {}, 'Subtitle sync')), box);
+}
+
 function addressesCard() {
   const apps = S.catalog.modules.filter((m) => m.exposedPort != null);
   if (!apps.length || !apps.some((m) => S.statuses.has(m.id))) return null;
@@ -307,6 +325,7 @@ function settings() {
       appPicker(sel, changed)),
     h('div', { class: 'card' }, h('div', { class: 'card-title' }, icon('disk', 20), h('h3', {}, 'Storage')), sBox),
     appearanceCard(),
+    subtitleSyncCard(),
     addressesCard(),
     h('div', { class: 'card' }, h('div', { class: 'card-title' }, icon('link', 20), h('h3', {}, 'Connection details'),
       button('Show', { kind: 'secondary', cls: 'btn-sm', onClick: (e) => { e.currentTarget.remove(); showConn().catch((x) => toast(x.message, 'error')); } })),

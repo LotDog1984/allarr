@@ -157,6 +157,27 @@ const secured = {
     json(res, 200, catalog());
   },
 
+  // "Sync new subtitles with the embedded ones" (Bazarr's own auto-sync can only use the audio).
+  'GET /api/settings/subtitle-sync': (req, res) => json(res, 200, { mode: wiring.subtitleSyncMode(), bazarr: enabledMods().some((m) => m.id === 'bazarr') }),
+  'POST /api/settings/subtitle-sync': async (req, res) => {
+    const { mode } = await readJson(req);
+    if (!['off', 'embedded'].includes(mode)) return fail(res, 400, 'Choose "off" or "embedded".');
+    store.update((s) => { s.settings = { ...s.settings, subtitleSync: mode }; });
+    let message = null;
+    if (enabledMods().some((m) => m.id === 'bazarr')) {
+      try {
+        message = await wiring.applySubtitleSync();
+      } catch (e) {
+        if (e.conflict) {
+          store.update((s) => { s.settings = { ...s.settings, subtitleSync: 'off' }; }); // don't claim it's on when it isn't
+          return fail(res, 409, e.message);
+        }
+        message = 'Saved. Bazarr is not reachable right now, so it will be applied the next time you press Re-apply connections.';
+      }
+    }
+    json(res, 200, { mode, message });
+  },
+
   'GET /api/answers': (req, res) => json(res, 200, store.get().setup.answers ?? {}),
 
   'POST /api/answers': async (req, res) => {

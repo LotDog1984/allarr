@@ -11,6 +11,7 @@ import * as profilarr from './profilarr.js';
 import * as sup from './supervisor.js';
 import { byId, baseUrl, MODULES } from './modules.js';
 import crypto from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 import { arr, call, keyOf, upsertWithSchema, ApiError } from './arr.js';
 import { canWrite, fixHint } from './perms.js';
 
@@ -50,6 +51,42 @@ async function each(items, label, fn) {
 }
 
 const name = (id) => byId[id].name;
+
+/**
+ * "Sync new subtitles with the embedded subtitles": Bazarr runs this command after every subtitle it saves (its own
+ * automatic sync can only use the audio). See embedded-sync.js. Placeholders are filled in by Bazarr.
+ */
+const SYNC_SCRIPT = fileURLToPath(new URL('./embedded-sync.js', import.meta.url));
+export const embeddedSyncCommand = () => `"${process.execPath}" "${SYNC_SCRIPT}" {{episode}} {{subtitles}} {{subtitles_language_code3}}`;
+const isOurSyncCommand = (cmd) => String(cmd ?? '').includes('embedded-sync.js');
+export const subtitleSyncMode = () => (store.get().settings?.subtitleSync === 'embedded' ? 'embedded' : 'off');
+
+/**
+ * Make Bazarr match the chosen mode. Throws (with a message for the GUI) if Bazarr already has a post-processing
+ * command of the user's own, which we never overwrite. Switching off only removes OUR command.
+ */
+export async function applySubtitleSync() {
+  const current = await call('bazarr', 'GET', '/api/system/settings');
+  const cmd = current?.general?.postprocessing_cmd ?? '';
+  if (subtitleSyncMode() === 'embedded') {
+    if (cmd && !isOurSyncCommand(cmd)) {
+      throw Object.assign(new Error("Bazarr already runs a post-processing command of your own (Bazarr → Settings → General → Post-processing). Remove it there first, or keep using it; Allarr won't overwrite it."), { conflict: true });
+    }
+    await call('bazarr', 'POST', '/api/system/settings', { form: {
+      'settings-general-use_postprocessing': 'true',
+      'settings-general-postprocessing_cmd': embeddedSyncCommand(),
+      'settings-general-use_postprocessing_threshold': 'false',
+      'settings-general-use_postprocessing_threshold_movie': 'false',
+      'settings-subsync-use_subsync': 'false', // its audio sync would run first and could throw the timing off
+    } });
+    return 'new subtitles are synced with the embedded ones';
+  }
+  if (isOurSyncCommand(cmd)) {
+    await call('bazarr', 'POST', '/api/system/settings', { form: { 'settings-general-use_postprocessing': 'false', 'settings-general-postprocessing_cmd': '' } });
+    return 'embedded sync switched off';
+  }
+  return null;
+}
 
 /** Make sure SABnzbd has these categories (a folder under its complete folder, named like the category). */
 async function ensureSabCategories(wanted) {
@@ -297,7 +334,16 @@ const steps = {
     if (!linked.length) return { status: 'skipped', detail: 'Neither Sonarr nor Radarr is running.' };
     // (header names are case-insensitive: call() already sends the key as X-Api-Key)
     await call('bazarr', 'POST', '/api/system/settings', { form });
-    return { status: 'ok', detail: `✓ Bazarr ⇄ ${linked.join(' and ')}` };
+    let extra = '';
+    try {
+      const note = await applySubtitleSync();
+      if (note) extra = `
+✓ Bazarr: ${note}`;
+    } catch (e) {
+      return { status: 'warn', detail: `✓ Bazarr ⇄ ${linked.join(' and ')}
+✗ Embedded subtitle sync: ${friendly(e)}` };
+    }
+    return { status: 'ok', detail: `✓ Bazarr ⇄ ${linked.join(' and ')}${extra}` };
   },
 
   async requests(ctx) {

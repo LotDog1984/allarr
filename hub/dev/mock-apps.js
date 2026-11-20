@@ -116,9 +116,13 @@ function handler(m) {
     if (m.kind === 'qbittorrent' && p === '/api/v2/app/version') return reply(200, 'v5.0.0-mock', 'text/plain');
     if (m.kind === 'flaresolverr' && p === '/') return reply(200, { msg: 'FlareSolverr is ready!', version: '3.5.2-mock', userAgent: 'mock' });
     if (m.kind === 'seerr' && p === '/api/v1/status') return reply(200, { version: '3.5.2-mock' });
+    if (m.kind === 'bazarr' && p === '/api/system/settings' && req.method === 'GET') {
+      if (req.headers['x-api-key'] !== expectedKey(m)) return reply(401, { error: 'bad key' });
+      return reply(200, { general: { postprocessing_cmd: state.settings?.['settings-general-postprocessing_cmd'] ?? '' } });
+    }
     if (m.kind === 'bazarr' && p === '/api/system/settings' && req.method === 'POST') {
       if (req.headers['x-api-key'] !== expectedKey(m)) return reply(401, { error: 'bad key' });
-      state.settings = Object.fromEntries(new URLSearchParams(raw));
+      state.settings = { ...state.settings, ...Object.fromEntries(new URLSearchParams(raw)) };
       log(` ${Object.keys(state.settings).length} settings`);
       return reply(204, '');
     }

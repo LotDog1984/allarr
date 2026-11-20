@@ -68,6 +68,29 @@ test('Profilarr connections are added once, then refreshed, with the sync priori
   check.close();
 });
 
+test('embedded sync picks the right subtitle track to sync against', async () => {
+  const { pickReference } = await import('../src/embedded-sync.js');
+  const sub = (codec, language, extra = {}) => ({ codec_name: codec, tags: { language, ...(extra.tags ?? {}) }, disposition: extra.disposition ?? {} });
+  const streams = [
+    sub('hdmv_pgs_subtitle', 'eng'), // a picture format: can't be a timing reference
+    sub('subrip', 'eng', { disposition: { forced: 1 } }), // forced: only the foreign-language lines
+    sub('subrip', 'fre'),
+    sub('ass', 'eng', { tags: { title: 'Signs & Songs' } }),
+    sub('subrip', 'eng', { tags: { NUMBER_OF_BYTES: '90000' } }),
+    sub('subrip', 'ger', { tags: { NUMBER_OF_BYTES: '95000' } }),
+  ];
+  assert.equal(pickReference(streams, 'eng').n, 4, 'same language wins, skipping picture, forced and signs tracks');
+  assert.equal(pickReference(streams, 'fra').n, 2, 'French (tagged "fre") matches the French subtitle code');
+  assert.equal(pickReference(streams, 'por').n, 5, 'no Portuguese track: fall back to the fullest other track');
+  assert.equal(pickReference([sub('hdmv_pgs_subtitle', 'eng'), sub('dvd_subtitle', 'eng')], 'eng'), null, 'only picture tracks: nothing to sync with');
+  assert.equal(pickReference([], 'eng'), null);
+});
+
+test('the embedded-sync command given to Bazarr uses its placeholders, one argument each', async () => {
+  const { embeddedSyncCommand } = await import('../src/wire.js');
+  assert.match(embeddedSyncCommand(), /embedded-sync.js" {{episode}} {{subtitles}} {{subtitles_language_code3}}$/);
+});
+
 test('storage layout is created and hardlinks are proven', () => {
   const r = storage.check();
   assert.ok(r.ok, JSON.stringify(r.issues));
