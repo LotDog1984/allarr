@@ -1,6 +1,6 @@
 name: Bump pinned app versions
 
-# Seerr, Maintainerr, Wizarr, SABnzbd and Cleanuparr are pinned in the Dockerfile for reproducible builds.
+# Seerr, Maintainerr, Wizarr, SABnzbd, Cleanuparr and FlareSolverr are pinned in the Dockerfile for reproducible builds.
 # Once a week this opens a pull request when upstream has released something newer.
 # Nothing is built or published until you merge it, so the merge is your confirmation.
 #

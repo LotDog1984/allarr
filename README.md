@@ -2,7 +2,7 @@
 
 **The whole \*arr stack in one container, with one friendly web UI.**
 
-Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, qBittorrent, SABnzbd, Seerr, Wizarr, Maintainerr and Cleanuparr run
+Sonarr, Radarr, Lidarr, Prowlarr, FlareSolverr, Bazarr, qBittorrent, SABnzbd, Seerr, Wizarr, Maintainerr and Cleanuparr run
 inside a single Docker container. A small control app, the **Allarr Hub**, starts and supervises them, hides
 them behind one login, and wires them to each other for you. No pasting API keys between twelve web UIs.
 
@@ -53,7 +53,7 @@ Allarr never updates anything by itself.
   downloads the release, verifies its checksum, stops the app, backs up its database (`/config/allarr/backups`),
   switches to the new files (`/config/allarr/apps`) and verifies that it starts. If it doesn't, the old version and
   database are restored automatically. No image rebuild or redeploy needed.
-* **Everything else is part of the image** (Bazarr, SABnzbd, Seerr, Wizarr, Maintainerr, Cleanuparr, qBittorrent).
+* **Everything else is part of the image** (Bazarr, SABnzbd, Seerr, Wizarr, Maintainerr, Cleanuparr, FlareSolverr, qBittorrent).
   The badge says so; update by redeploying with the latest image (Dockge: *Update*, Portainer: *Pull and redeploy*).
 * **The image rebuilds itself.** GitHub Actions publishes a fresh image every Monday (picking up new
   Sonarr/Radarr/Lidarr/Prowlarr/Bazarr releases). The versions pinned in the Dockerfile are bumped by a weekly pull
@@ -85,8 +85,9 @@ The Hub verifies this with a real test on the Storage step and shows a clear war
 |---|---|
 | Config seeding | Each app starts already bound to `127.0.0.1`, under its URL base (`/sonarr`, `/radarr`, ...), with a known API key and authentication delegated to the Hub. |
 | Root folders | `/media/series`, `/media/movies`, `/media/music`, and "use hardlinks" switched on. |
-| Download clients | qBittorrent and SABnzbd added to Sonarr, Radarr and Lidarr with the right categories. |
+| Download clients | qBittorrent and SABnzbd added to Sonarr, Radarr, Lidarr and Prowlarr (Prowlarr uses its own `prowlarr` category). |
 | Indexers | Prowlarr linked to Sonarr, Radarr and Lidarr with full sync. |
+| Cloudflare | FlareSolverr added to Prowlarr as an indexer proxy, with a `flaresolverr` tag. Give that tag to any indexer Prowlarr says is Cloudflare-protected and its searches go through FlareSolverr. Only tagged indexers use it, so everything else stays fast. |
 | Subtitles | Bazarr linked to Sonarr and Radarr. |
 | Requests | Sonarr and Radarr pre-added to Seerr. |
 | Usenet | Your provider added to SABnzbd (optional). |
@@ -101,7 +102,7 @@ Settings re-wires everything.
  browser ──► :8080  Allarr Hub ── login, GUI, reverse proxy ──► 127.0.0.1:8989 /sonarr
                 │                                              127.0.0.1:7878 /radarr
                 │  supervises (spawn, restart, logs)            ... prowlarr, bazarr, qbittorrent,
-                ▼                                                    sabnzbd, maintainerr, cleanuparr
+                ▼                                                    sabnzbd, maintainerr, cleanuparr, flaresolverr
         configures each app over its own HTTP API
  browser ──► :5055  Seerr   (own sign-in, for the people you share it with)
  browser ──► :5690  Wizarr  (own sign-in / invite links)
@@ -152,6 +153,7 @@ Design notes and limits:
 
 * **Cleanuparr** hardcodes its state folder, so the image symlinks it into `/config/cleanuparr`. **Wizarr**
   likewise uses `/data/database`, symlinked to `/config/wizarr/database`.
+* **FlareSolverr** has no web page (it is an API that Prowlarr calls), so it listens on `127.0.0.1` only and the Hub shows just its status and log. It runs from source in its own virtualenv on Debian's Chromium, the same recipe as its official Docker image, so it works on amd64 and arm64. The Chromium it needs makes the image noticeably larger. It is off for installs that predate it: tick it in *Settings → Apps*.
 * **Maintainerr** requires Node 26+ while Seerr v3.5.2 needs Node 22, so the image carries two Node runtimes.
 * Seerr's `sqlite3` is compiled from source during the build because its prebuilt binary needs a newer glibc than
   Debian bookworm provides.

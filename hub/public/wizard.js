@@ -171,8 +171,8 @@ function storage(id) {
 // 3 ───────────────────────────────────────────────────────────────────────── apps ───
 const PRESETS = [
   { label: 'Everything', apps: () => S.catalog.modules.map((m) => m.id) },
-  { label: 'Essentials', apps: () => ['sonarr', 'radarr', 'prowlarr', 'qbittorrent'] },
-  { label: 'Torrents + subtitles', apps: () => ['sonarr', 'radarr', 'prowlarr', 'bazarr', 'qbittorrent', 'seerr'] },
+  { label: 'Essentials', apps: () => ['sonarr', 'radarr', 'prowlarr', 'flaresolverr', 'qbittorrent'] },
+  { label: 'Torrents + subtitles', apps: () => ['sonarr', 'radarr', 'prowlarr', 'flaresolverr', 'bazarr', 'qbittorrent', 'seerr'] },
 ];
 
 export function appPicker(sel, onChange) {

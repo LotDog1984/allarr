@@ -22,6 +22,7 @@ export const GROUPS = [
  *  basePath   URL prefix the Hub serves the app under (login-protected)
  *  stripBase  the app has no URL-base option, so the Hub strips the prefix itself
  *  entryParams  query added when its main page is opened (SABnzbd: skip the quick-start wizard)
+ *  headless   no web page at all (just an API other apps call): the Hub shows status and log only
  *  exposed    app has its own login and must be reachable on its own port (requests / invites)
  *  run()      how to launch it inside the container
  */
@@ -52,6 +53,17 @@ export const MODULES = [
     blurb: 'One place to add search sources. Shares them with Sonarr, Radarr and Lidarr.',
     port: 9696, basePath: '/prowlarr', kind: 'servarr', api: 'v1', health: '/ping', defaultOn: true,
     run: () => ({ cmd: path.join(binDir('prowlarr'), 'Prowlarr'), args: ['-nobrowser', `-data=${cfg('prowlarr')}`] }),
+  },
+  {
+    id: 'flaresolverr', name: 'FlareSolverr', role: 'Cloudflare helper', group: 'search', color: '#2ea44f', headless: true,
+    blurb: 'Lets Prowlarr reach indexers that sit behind Cloudflare. Allarr connects it for you.',
+    port: 8191, kind: 'flaresolverr', health: '/', defaultOn: true,
+    run: (m) => ({
+      cmd: app('venv-flaresolverr', 'bin', 'python'),
+      args: ['-u', app('flaresolverr', 'src', 'flaresolverr.py')],
+      cwd: app('flaresolverr', 'src'),
+      env: { HOST: '127.0.0.1', PORT: String(m.listenPort), LOG_LEVEL: 'info', HEADLESS: 'true' },
+    }),
   },
   {
     id: 'bazarr', theme: 'bazarr', name: 'Bazarr', role: 'Subtitles', group: 'search', color: '#a855f7',
@@ -138,5 +150,5 @@ export const baseUrl = (m) => `http://127.0.0.1:${m.listenPort}${internalBase(m)
 /** What the browser needs to know. No commands, no paths. */
 export const publicInfo = (m) => ({
   id: m.id, name: m.name, role: m.role, blurb: m.blurb, group: m.group, color: m.color,
-  basePath: m.basePath || null, exposedPort: m.exposed ? m.port : null, defaultOn: !!m.defaultOn,
+  basePath: m.basePath || null, headless: !!m.headless, exposedPort: m.exposed ? m.port : null, defaultOn: !!m.defaultOn,
 });

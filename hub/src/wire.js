@@ -49,6 +49,8 @@ async function each(items, label, fn) {
 }
 
 const name = (id) => byId[id].name;
+/** The Prowlarr tag that routes an indexer through FlareSolverr. Also named in the checklist text. */
+export const FLARE_TAG = 'flaresolverr';
 /** The last couple of log lines, so a failed start says WHY right in the wizard. */
 const lastLog = (id) => {
   const lines = sup.tail(id, 40).map((l) => l.trim()).filter(Boolean).slice(-2);
@@ -179,14 +181,15 @@ const steps = {
   },
 
   async downloaders(ctx) {
-    const libs = ctx.libs.filter((id) => ctx.up.has(id));
+    // Prowlarr gets the clients too (for grabbing a release straight from its own search page), in its own category.
+    const libs = [...ctx.libs, ...(ctx.ids.includes('prowlarr') ? ['prowlarr'] : [])].filter((id) => ctx.up.has(id));
     const clients = [];
     if (ctx.up.has('qbittorrent')) clients.push('qbittorrent');
     if (ctx.up.has('sabnzbd')) clients.push('sabnzbd');
     const pairs = libs.flatMap((lib) => clients.map((c) => [lib, c]));
     return each(pairs, ([lib, c]) => `${name(lib)} ⇄ ${name(c)}`, async ([lib, c]) => {
-      const category = byId[lib].category;
-      const cats = { tvCategory: category, movieCategory: category, musicCategory: category };
+      const category = byId[lib].category ?? 'prowlarr';
+      const cats = { tvCategory: category, movieCategory: category, musicCategory: category, category };
       if (c === 'qbittorrent') {
         const creds = store.get().qbittorrent ?? { username: 'admin', password: '' };
         return upsertWithSchema(lib, 'downloadclient', 'QBittorrent', 'qBittorrent', {
@@ -208,6 +211,25 @@ const steps = {
         prowlarrUrl: baseUrl(byId.prowlarr), baseUrl: baseUrl(byId[id]), apiKey: keyOf(id),
       }, { syncLevel: 'fullSync' }),
     );
+  },
+
+  /**
+   * Prowlarr talks to FlareSolverr through an "indexer proxy", and only for indexers that carry the proxy's tag.
+   * So: make the tag, make the proxy, and the user ticks the tag on any indexer that Prowlarr says is
+   * Cloudflare-protected (the checklist explains it). Tagging everything would slow every search down.
+   */
+  async flaresolverr(ctx) {
+    if (!ctx.up.has('prowlarr')) return { status: 'warn', detail: '✗ Prowlarr is not running, so FlareSolverr was not added.' };
+    if (!ctx.up.has('flaresolverr')) {
+      return { status: 'warn', detail: `✗ FlareSolverr didn't start${sup.info('flaresolverr').error ? ` (${sup.info('flaresolverr').error})` : ''}${lastLog('flaresolverr')}` };
+    }
+    const label = FLARE_TAG;
+    const tags = await arr('prowlarr', 'GET', '/tag');
+    const tag = tags.find((t) => t.label === label) ?? (await arr('prowlarr', 'POST', '/tag', { body: { label } }));
+    const how = await upsertWithSchema('prowlarr', 'indexerProxy', 'FlareSolverr', 'FlareSolverr', {
+      host: `http://127.0.0.1:${byId.flaresolverr.listenPort}/`, requestTimeout: 60,
+    }, { tags: [tag.id] });
+    return { status: 'ok', detail: `✓ FlareSolverr ${how} in Prowlarr. Give an indexer the "${label}" tag to send it through FlareSolverr` };
   },
 
   async subtitles(ctx) {
@@ -297,8 +319,9 @@ function plan(ids) {
   if (has('cleanuparr')) p.push({ id: 'cleanuparr', label: 'Skipping Cleanuparr\'s separate sign-in' });
   if (has('sabnzbd')) p.push({ id: 'usenet', label: 'Setting up Usenet' });
   if (libs.length) p.push({ id: 'libraries', label: 'Pointing libraries at /media' });
-  if (libs.length && has('qbittorrent', 'sabnzbd')) p.push({ id: 'downloaders', label: 'Connecting the download clients' });
+  if ((libs.length || has('prowlarr')) && has('qbittorrent', 'sabnzbd')) p.push({ id: 'downloaders', label: 'Connecting the download clients' });
   if (has('prowlarr') && libs.length) p.push({ id: 'indexers', label: 'Sharing Prowlarr indexers' });
+  if (has('prowlarr') && has('flaresolverr')) p.push({ id: 'flaresolverr', label: 'Connecting FlareSolverr to Prowlarr' });
   if (has('bazarr') && has('sonarr', 'radarr')) p.push({ id: 'subtitles', label: 'Connecting Bazarr' });
   if (has('seerr')) p.push({ id: 'requests', label: 'Setting up requests in Seerr' });
   p.push({ id: 'finish', label: 'Finishing up' });

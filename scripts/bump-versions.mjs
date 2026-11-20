@@ -1,5 +1,5 @@
 // Checks upstream for newer releases of the apps whose versions are pinned in the Dockerfile
-// (Seerr, Maintainerr, Wizarr, SABnzbd, Cleanuparr) and rewrites the ARG lines.
+// (Seerr, Maintainerr, Wizarr, SABnzbd, Cleanuparr, FlareSolverr) and rewrites the ARG lines.
 //
 //   node scripts/bump-versions.mjs            rewrite Dockerfile + write bump-summary.md when something changed
 //   DRY_RUN=1 node scripts/bump-versions.mjs  only print what would change
@@ -14,6 +14,7 @@ const TARGETS = {
   WIZARR_VERSION: 'wizarrrr/wizarr',
   SABNZBD_VERSION: 'sabnzbd/sabnzbd',
   CLEANUPARR_VERSION: 'Cleanuparr/Cleanuparr',
+  FLARESOLVERR_VERSION: 'FlareSolverr/FlareSolverr',
 };
 
 const headers = {

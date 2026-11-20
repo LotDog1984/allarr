@@ -126,7 +126,7 @@ function appCard(m) {
     h('div', { class: 'muted small', style: { minHeight: '38px' } }, m.blurb),
     h('div', { class: 'error-text small', 'data-hint': m.id }),
     h('div', { class: 'actions' },
-      button('Open', { kind: 'primary', iconRight: m.basePath ? 'right' : 'external', cls: 'btn-sm', onClick: () => openApp(m) }),
+      m.headless ? h('span', { class: 'faint small', style: { flex: '1' } }, 'Works in the background') : button('Open', { kind: 'primary', iconRight: m.basePath ? 'right' : 'external', cls: 'btn-sm', onClick: () => openApp(m) }),
       button('', { kind: 'secondary', icon: 'logs', cls: 'btn-sm', title: 'View log', onClick: () => showLogs(m) })),
     h('div', { class: 'flex faint small' }, h('span', { class: 'grow', 'data-version': m.id }),
       h('button', { class: 'pill pill-warn chip-update', 'data-update': m.id, hidden: true, title: 'Review this update', onClick: () => go('#/updates') })));
@@ -175,13 +175,24 @@ function appView(id) {
     button('Log', { kind: 'ghost', cls: 'btn-sm', icon: 'logs', onClick: () => showLogs(m) }));
   const st = S.statuses.get(id);
 
-  const url = exposedUrl(m.exposedPort);
+  const url = m.headless ? null : exposedUrl(m.exposedPort);
+  const crashed = st && !st.up && ['crashed', 'missing'].includes(st.state)
+    ? h('div', { class: 'notice notice-err' }, icon('alert', 18), h('div', {}, h('b', {}, `${m.name} isn't running`), st.error ?? '', st.hint ? h('div', { class: 'mono small', style: { marginTop: '6px', wordBreak: 'break-all' } }, st.hint) : null,
+      h('div', { class: 'hint' }, 'Press Log for details. Permission errors usually mean PUID/PGID should match the owner of your config and media folders.')))
+    : null;
+  if (m.headless) {
+    // An app with no web page (FlareSolverr): nothing to open, so say what it does and how to use it.
+    return h('div', { class: 'frame-wrap' }, bar,
+      h('div', { class: 'page', style: { maxWidth: '720px' } }, crashed,
+        h('div', { class: 'card stack' },
+          h('h2', {}, `${m.name} works in the background`),
+          h('p', { class: 'muted' }, m.blurb),
+          h('p', { class: 'muted' }, `It has no page of its own. In Prowlarr, open an indexer that reports a Cloudflare problem and type "flaresolverr" into its Tags box. That indexer's searches then go through ${m.name}.`),
+          S.statuses.has('prowlarr') ? h('div', { class: 'flex' }, button('Open Prowlarr', { kind: 'primary', iconRight: 'right', onClick: () => go('#/app/prowlarr') })) : null)));
+  }
   return h('div', { class: 'frame-wrap' }, bar,
     h('div', { class: 'page', style: { maxWidth: '720px' } },
-      st && !st.up && ['crashed', 'missing'].includes(st.state)
-        ? h('div', { class: 'notice notice-err' }, icon('alert', 18), h('div', {}, h('b', {}, `${m.name} isn't running`), st.error ?? '', st.hint ? h('div', { class: 'mono small', style: { marginTop: '6px', wordBreak: 'break-all' } }, st.hint) : null,
-          h('div', { class: 'hint' }, 'Press Log for details. Permission errors usually mean PUID/PGID should match the owner of your config and media folders.')))
-        : null,
+      crashed,
       h('div', { class: 'card stack' },
         h('h2', {}, `${m.name} has its own address`),
         h('p', { class: 'muted' }, `${m.name} is meant for the people you share it with, so it has its own sign-in and its own port instead of living behind your admin login.`),

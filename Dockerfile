@@ -11,6 +11,7 @@ ARG MAINTAINERR_VERSION=3.32.0
 ARG WIZARR_VERSION=2026.10.1
 ARG SABNZBD_VERSION=5.1.3
 ARG CLEANUPARR_VERSION=2.11.1
+ARG FLARESOLVERR_VERSION=3.5.2
 
 # ---------------------------------------------------------------------------------------
 # 1. Prebuilt binaries: Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Cleanuparr
@@ -98,9 +99,11 @@ ARG WIZARR_VERSION
 ARG SEERR_VERSION
 ARG MAINTAINERR_VERSION
 ARG CLEANUPARR_VERSION
+ARG FLARESOLVERR_VERSION
 ENV DEBIAN_FRONTEND=noninteractive
 
-# .NET runtime libs, Python, the torrent client, Usenet extraction tools, and Maintainerr's image libs.
+# .NET runtime libs, Python, the torrent client, Usenet extraction tools, Maintainerr's image libs,
+# and FlareSolverr's browser (Chromium + its driver + a virtual screen, same set as FlareSolverr's own image).
 RUN sed -i 's/^Components: main$/Components: main non-free/' /etc/apt/sources.list.d/debian.sources \
  && grep -q "non-free" /etc/apt/sources.list.d/debian.sources \
  && apt-get update && apt-get install -y --no-install-recommends \
@@ -110,6 +113,7 @@ RUN sed -i 's/^Components: main$/Components: main non-free/' /etc/apt/sources.li
     qbittorrent-nox \
     par2 p7zip-full unrar \
     libcairo2 libpango-1.0-0 libpangocairo-1.0-0 libpixman-1-0 libjpeg62-turbo libgif7 librsvg2-2 \
+    chromium chromium-driver xvfb xauth \
  && rm -rf /var/lib/apt/lists/*
 
 # Servarr apps, Bazarr, Cleanuparr
@@ -121,8 +125,8 @@ COPY --from=fetch /out/bazarr     /opt/bazarr
 COPY --from=fetch /out/cleanuparr /opt/cleanuparr
 # What's in this image, for the Hub's update checks (the fetch stage recorded the downloaded apps).
 COPY --from=fetch /out/versions.json /opt/versions.json
-RUN V_SAB="$SABNZBD_VERSION" V_WIZ="$WIZARR_VERSION" V_SEERR="$SEERR_VERSION" V_MAIN="$MAINTAINERR_VERSION" V_CLEAN="$CLEANUPARR_VERSION" \
-    node -e "const fs=require('fs'),e=process.env,f='/opt/versions.json',v=JSON.parse(fs.readFileSync(f));Object.assign(v,{sabnzbd:e.V_SAB,wizarr:e.V_WIZ,seerr:e.V_SEERR,maintainerr:e.V_MAIN,cleanuparr:e.V_CLEAN});fs.writeFileSync(f,JSON.stringify(v))"
+RUN V_SAB="$SABNZBD_VERSION" V_WIZ="$WIZARR_VERSION" V_SEERR="$SEERR_VERSION" V_MAIN="$MAINTAINERR_VERSION" V_CLEAN="$CLEANUPARR_VERSION" V_FLARE="$FLARESOLVERR_VERSION" \
+    node -e "const fs=require('fs'),e=process.env,f='/opt/versions.json',v=JSON.parse(fs.readFileSync(f));Object.assign(v,{sabnzbd:e.V_SAB,wizarr:e.V_WIZ,seerr:e.V_SEERR,maintainerr:e.V_MAIN,cleanuparr:e.V_CLEAN,flaresolverr:e.V_FLARE});fs.writeFileSync(f,JSON.stringify(v))"
 # Cleanuparr hardcodes <app dir>/config; keep its state in /config/cleanuparr like every other app.
 RUN rm -rf /opt/cleanuparr/config && ln -s /config/cleanuparr /opt/cleanuparr/config  && mkdir -p /opt/bazarr/bin && chmod -R a+rwX /opt/bazarr/bin
 
@@ -133,6 +137,14 @@ RUN curl -fsSL "https://github.com/sabnzbd/sabnzbd/releases/download/${SABNZBD_V
  && mv "/opt/SABnzbd-${SABNZBD_VERSION}" /opt/sabnzbd \
  && python3 -m venv /opt/venv-sabnzbd \
  && /opt/venv-sabnzbd/bin/pip install --no-cache-dir -r /opt/sabnzbd/requirements.txt
+
+# FlareSolverr: run from source, like upstream's Dockerfile, on Debian's Chromium (works on amd64 and arm64).
+# It looks for its driver at /app/chromedriver and patches that file in place, so it gets a writable copy.
+RUN mkdir -p /opt/flaresolverr /app \
+ && curl -fsSL "https://github.com/FlareSolverr/FlareSolverr/archive/refs/tags/v${FLARESOLVERR_VERSION}.tar.gz" | tar xz -C /opt/flaresolverr --strip-components=1 \
+ && python3 -m venv /opt/venv-flaresolverr \
+ && /opt/venv-flaresolverr/bin/pip install --no-cache-dir -r /opt/flaresolverr/requirements.txt \
+ && cp /usr/bin/chromedriver /app/chromedriver && chmod -R a+rwX /app
 
 # Seerr
 COPY --from=seerr-build /app               /opt/seerr

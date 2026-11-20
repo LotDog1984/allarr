@@ -33,7 +33,18 @@ test('module catalog has unique ports and base paths', () => {
   assert.equal(new Set(ports).size, ports.length);
   const bases = MODULES.filter((m) => m.basePath).map((m) => m.basePath);
   assert.equal(new Set(bases).size, bases.length);
-  for (const m of MODULES) assert.ok(m.exposed || m.basePath, `${m.id} must be proxied or exposed`);
+  for (const m of MODULES) assert.ok(m.exposed || m.basePath || m.headless, `${m.id} must be proxied, exposed or headless`);
+});
+
+test('FlareSolverr is a headless app that listens on localhost only and is seeded with its crash folder', () => {
+  const m = byId.flaresolverr;
+  assert.ok(m.headless && !m.basePath && !m.exposed);
+  assert.equal(m.listenHost, '127.0.0.1');
+  const run = m.run(m);
+  assert.equal(run.env.HOST, '127.0.0.1');
+  assert.equal(run.env.PORT, String(m.listenPort));
+  seed.prepare(m);
+  assert.ok(fs.statSync(path.join(process.env.ALLARR_CONFIG_DIR, 'flaresolverr', '.config', 'chromium', 'Crash Reports', 'pending')).isDirectory());
 });
 
 test('storage layout is created and hardlinks are proven', () => {
@@ -81,7 +92,7 @@ test('qBittorrent is seeded with a hashed password, categories and shared save p
   assert.ok(!conf.includes(password), 'plain password must not be written to the config');
   assert.match(conf, /WebUI\\Address=127\.0\.0\.1/);
   const cats = JSON.parse(fs.readFileSync(path.join(process.env.ALLARR_CONFIG_DIR, 'qbittorrent', 'qBittorrent', 'config', 'categories.json'), 'utf8'));
-  assert.deepEqual(Object.keys(cats).sort(), ['movies', 'music', 'tv']);
+  assert.deepEqual(Object.keys(cats).sort(), ['movies', 'music', 'prowlarr', 'tv']);
 });
 
 test('SABnzbd is seeded with a key, URL base and category folders', () => {

@@ -26,6 +26,7 @@ export async function readVersion(mod) {
     if (mod.kind === 'qbittorrent') return (await get('/api/v2/app/version')).replace(/^v/, '');
     if (mod.kind === 'sabnzbd') return JSON.parse(await get('/api?mode=version&output=json')).version;
     if (mod.kind === 'seerr') return JSON.parse(await get('/api/v1/status')).version;
+    if (mod.kind === 'flaresolverr') return JSON.parse(await get('/')).version;
   } catch { /* version is a nice-to-have */ }
   return null;
 }

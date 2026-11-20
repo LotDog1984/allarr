@@ -1,4 +1,5 @@
 import * as store from './state.js';
+import { FLARE_TAG } from './wire.js';
 
 const SERVERS = { plex: 'Plex', jellyfin: 'Jellyfin', emby: 'Emby' };
 
@@ -14,7 +15,10 @@ export function list() {
     t.push({
       id: 'indexers', app: 'prowlarr', path: '/prowlarr/#/indexers', cta: 'Add indexers',
       title: 'Add your indexers',
-      detail: 'Prowlarr needs at least one torrent or Usenet indexer. Add them once here; they sync to Sonarr, Radarr and Lidarr automatically.',
+      detail: 'Prowlarr needs at least one torrent or Usenet indexer. Add them once here; they sync to Sonarr, Radarr and Lidarr automatically.'
+        + (on.has('flaresolverr')
+          ? ` If Prowlarr says an indexer is protected by Cloudflare, type "${FLARE_TAG}" into that indexer's Tags box: FlareSolverr is already connected and will handle it.`
+          : ''),
     });
   }
   if (on.has('sabnzbd') && !a.usenet?.enabled) {

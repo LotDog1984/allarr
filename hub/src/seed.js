@@ -122,7 +122,7 @@ function seedQbittorrent(mod) {
   writeIfMissing(
     path.join(confDir, 'categories.json'),
     JSON.stringify(
-      Object.fromEntries(['movies', 'tv', 'music'].map((c) => [c, { save_path: `${torrents}/${c}` }])),
+      Object.fromEntries(['movies', 'tv', 'music', 'prowlarr'].map((c) => [c, { save_path: `${torrents}/${c}` }])),
       null, 2,
     ),
   );
@@ -142,7 +142,7 @@ function seedSabnzbd(mod) {
   }
   apiKey ??= rand();
   const usenet = media('downloads', 'usenet');
-  const cats = ['movies', 'tv', 'music'];
+  const cats = ['movies', 'tv', 'music', 'prowlarr'];
   writeIfMissing(file, [
     '[misc]',
     `api_key = ${apiKey}`,
@@ -219,7 +219,15 @@ function seedSeerr(mod) {
   return {};
 }
 
+// FlareSolverr drives Chromium, which wants its crash-report folder to exist under HOME (= its config folder).
+function seedFlaresolverr(mod) {
+  ensureDir(cfgDir(mod.id));
+  ensureDir(path.join(cfgDir(mod.id), '.config', 'chromium', 'Crash Reports', 'pending'));
+  return {};
+}
+
 const SEEDERS = {
+  flaresolverr: seedFlaresolverr,
   seerr: seedSeerr,
   servarr: seedServarr,
   qbittorrent: seedQbittorrent,

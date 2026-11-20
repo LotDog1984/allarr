@@ -27,7 +27,7 @@ function expectedKey(m) {
 }
 
 const field = (name, value = '') => ({ name, value });
-const catField = (m) => ({ sonarr: 'tvCategory', radarr: 'movieCategory', lidarr: 'musicCategory' }[m.id]);
+const catField = (m) => ({ sonarr: 'tvCategory', radarr: 'movieCategory', lidarr: 'musicCategory', prowlarr: 'category' }[m.id]);
 function clientSchema(m) {
   const common = [field('host', 'localhost'), field('port', 8080), field('useSsl', false), field('urlBase'), field('username'), field('password')];
   return [
@@ -39,6 +39,11 @@ const appSchema = () => ['Sonarr', 'Radarr', 'Lidarr'].map((n) => ({
   implementation: n, implementationName: n, configContract: `${n}Settings`,
   fields: [field('prowlarrUrl'), field('baseUrl'), field('apiKey'), field('syncCategories', [])],
 }));
+
+const proxySchema = () => [{
+  implementation: 'FlareSolverr', implementationName: 'FlareSolverr', configContract: 'FlareSolverrSettings',
+  fields: [field('host', 'http://localhost:8191/'), field('requestTimeout', 60)],
+}];
 
 const page = (m) => `<!doctype html><meta charset=utf-8><title>${m.name} (mock)</title>
 <body style="font:15px system-ui;padding:32px;background:#1b1e26;color:#dfe3ec">
@@ -81,10 +86,10 @@ function handler(m) {
       if (r === '/metadataprofile') return reply(200, [{ id: 1, name: 'Standard' }]);
       if (r === '/config/mediamanagement') return reply(200, state.mediamanagement);
       if (r.startsWith('/config/mediamanagement/') && req.method === 'PUT') { state.mediamanagement = json; return reply(200, json); }
-      const coll = r.match(/^\/(rootfolder|downloadclient|applications)(?:\/(schema|\d+))?$/);
+      const coll = r.match(/^\/(rootfolder|downloadclient|applications|tag|indexerProxy)(?:\/(schema|\d+))?$/);
       if (coll) {
-        const list = state[coll[1]];
-        if (coll[2] === 'schema') return reply(200, coll[1] === 'downloadclient' ? clientSchema(m) : appSchema());
+        const list = (state[coll[1]] ??= []);
+        if (coll[2] === 'schema') return reply(200, coll[1] === 'downloadclient' ? clientSchema(m) : coll[1] === 'indexerProxy' ? proxySchema() : appSchema());
         if (req.method === 'GET') return reply(200, list);
         if (req.method === 'POST') { const item = { ...json, id: list.length + 1 }; list.push(item); return reply(201, item); }
         if (req.method === 'PUT') { const i = list.findIndex((x) => x.id === json.id); list[i] = json; return reply(200, json); }
@@ -103,6 +108,7 @@ function handler(m) {
       }
     }
     if (m.kind === 'qbittorrent' && p === '/api/v2/app/version') return reply(200, 'v5.0.0-mock', 'text/plain');
+    if (m.kind === 'flaresolverr' && p === '/') return reply(200, { msg: 'FlareSolverr is ready!', version: '3.5.2-mock', userAgent: 'mock' });
     if (m.kind === 'seerr' && p === '/api/v1/status') return reply(200, { version: '3.5.2-mock' });
     if (m.kind === 'bazarr' && p === '/api/system/settings' && req.method === 'POST') {
       if (req.headers['x-api-key'] !== expectedKey(m)) return reply(401, { error: 'bad key' });
