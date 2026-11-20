@@ -235,16 +235,21 @@ const steps = {
   async requests(ctx) {
     const file = path.join(config.configDir, 'seerr', 'settings.json');
     // Seerr must write its own complete default settings.json first (a partial file crashes it).
-    if (!fs.existsSync(file)) {
-      stack.startModule('seerr');
+    if (config.supervise && !seed.isCompleteSeerrSettings(file)) {
+      stack.startModule('seerr'); // also moves a partial leftover file aside
       await health.waitUntilUp(byId.seerr, { timeout: 150_000 });
-      for (let i = 0; i < 20 && !fs.existsSync(file) && config.supervise; i++) await new Promise((r) => setTimeout(r, 1000));
+      for (let i = 0; i < 20 && !seed.isCompleteSeerrSettings(file); i++) await new Promise((r) => setTimeout(r, 1000));
     }
     if (config.supervise) await sup.stop('seerr'); // Seerr rewrites this file while it runs
     let settings = {};
     try {
       settings = JSON.parse(fs.readFileSync(file, 'utf8'));
     } catch { /* dev/mock: no real Seerr wrote one */ }
+    if (config.supervise && !settings.main) {
+      // Never write a file without Seerr's own defaults: it would crash on the next start.
+      stack.startModule('seerr');
+      return { status: 'warn', detail: '✗ Seerr did not finish creating its settings in time, so Radarr/Sonarr were not added. Run setup again in a minute.' };
+    }
 
     const lines = [];
     for (const id of ['radarr', 'sonarr']) {

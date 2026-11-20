@@ -195,7 +195,32 @@ function seedPlain(mod) {
   return {};
 }
 
+// --- Seerr ---------------------------------------------------------------------------------
+/** True when settings.json is a complete file Seerr itself wrote (it always has a `main` section). */
+export function isCompleteSeerrSettings(file) {
+  try {
+    const data = JSON.parse(fs.readFileSync(file, 'utf8'));
+    return !!data && typeof data === 'object' && !!data.main && typeof data.main === 'object';
+  } catch {
+    return false;
+  }
+}
+
+// Seerr crashes on start ("Cannot read properties of undefined (reading 'apiKey')") if settings.json exists but
+// is partial or truncated. Earlier Allarr versions could leave such a file behind: move it aside so Seerr
+// writes a fresh complete one (wiring re-adds Radarr/Sonarr to it).
+function seedSeerr(mod) {
+  ensureDir(cfgDir(mod.id));
+  const file = path.join(cfgDir(mod.id), 'settings.json');
+  if (fs.existsSync(file) && !isCompleteSeerrSettings(file)) {
+    fs.renameSync(file, `${file}.broken`);
+    chownPath(`${file}.broken`);
+  }
+  return {};
+}
+
 const SEEDERS = {
+  seerr: seedSeerr,
   servarr: seedServarr,
   qbittorrent: seedQbittorrent,
   sabnzbd: seedSabnzbd,
