@@ -14,6 +14,7 @@ services:
       - "8080:8080"          # Allarr Hub: the one page you manage everything from
       - "5055:5055"          # Seerr: requests (share this with friends and family)
       - "5690:5690"          # Wizarr: invite links
+      - "6868:6868"          # Profilarr: quality profiles (for you only, has its own sign-in)
       - "6881:6881"          # torrent peer port
       - "6881:6881/udp"
     environment:
@@ -24,6 +25,7 @@ services:
       # match: either set these, or use Settings -> "Addresses for requests and invites" in the GUI.
       # PUBLIC_PORT_SEERR: "12000"
       # PUBLIC_PORT_WIZARR: "13000"
+      # PUBLIC_PORT_PROFILARR: "6868"
     volumes:
       # 1) Where every app keeps its settings and databases. Back this folder up.
       - /opt/allarr/config:/config

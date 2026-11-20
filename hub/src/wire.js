@@ -7,6 +7,7 @@ import * as storage from './storage.js';
 import * as stack from './stack.js';
 import * as seed from './seed.js';
 import * as health from './health.js';
+import * as profilarr from './profilarr.js';
 import * as sup from './supervisor.js';
 import { byId, baseUrl, MODULES } from './modules.js';
 import crypto from 'node:crypto';
@@ -49,6 +50,18 @@ async function each(items, label, fn) {
 }
 
 const name = (id) => byId[id].name;
+
+/** Make sure SABnzbd has these categories (a folder under its complete folder, named like the category). */
+async function ensureSabCategories(wanted) {
+  const key = keyOf('sabnzbd') ?? '';
+  const { categories = [] } = await call('sabnzbd', 'GET', `/api?${new URLSearchParams({ mode: 'get_cats', output: 'json', apikey: key })}`);
+  for (const cat of new Set(wanted)) {
+    if (categories.includes(cat)) continue;
+    const q = new URLSearchParams({ mode: 'set_config', section: 'categories', name: cat, dir: cat, output: 'json', apikey: key });
+    const res = await call('sabnzbd', 'GET', `/api?${q}`);
+    if (res?.status === false) throw new Error(`SABnzbd would not create the "${cat}" category`);
+  }
+}
 /** The Prowlarr tag that routes an indexer through FlareSolverr. Also named in the checklist text. */
 export const FLARE_TAG = 'flaresolverr';
 /** The last couple of log lines, so a failed start says WHY right in the wizard. */
@@ -186,6 +199,9 @@ const steps = {
     const clients = [];
     if (ctx.up.has('qbittorrent')) clients.push('qbittorrent');
     if (ctx.up.has('sabnzbd')) clients.push('sabnzbd');
+    // Prowlarr, Sonarr, Radarr and Lidarr refuse a SABnzbd client whose category doesn't exist there. New installs are
+    // seeded with them, but SABnzbd's config on an existing install predates some (e.g. "prowlarr"), so create what's missing.
+    if (clients.includes('sabnzbd')) await ensureSabCategories(libs.map((lib) => byId[lib].category ?? 'prowlarr'));
     const pairs = libs.flatMap((lib) => clients.map((c) => [lib, c]));
     return each(pairs, ([lib, c]) => `${name(lib)} ⇄ ${name(c)}`, async ([lib, c]) => {
       const category = byId[lib].category ?? 'prowlarr';
@@ -230,6 +246,36 @@ const steps = {
       host: `http://127.0.0.1:${byId.flaresolverr.listenPort}/`, requestTimeout: 60,
     }, { tags: [tag.id] });
     return { status: 'ok', detail: `✓ FlareSolverr ${how} in Prowlarr. Give an indexer the "${label}" tag to send it through FlareSolverr` };
+  },
+
+  /**
+   * Profilarr has no API for adding a Sonarr/Radarr connection (only its own UI forms), so write the same two rows
+   * its "add instance" code writes. Its database is pinned to the version in the Dockerfile, and anything that goes
+   * wrong here just falls back to the checklist (add them by hand), so a schema change can't break setup.
+   */
+  async profilarr(ctx) {
+    const targets = ['radarr', 'sonarr'].filter((id) => ctx.up.has(id));
+    if (!targets.length) return { status: 'skipped', detail: 'Neither Sonarr nor Radarr is running.' };
+    if (!ctx.up.has('profilarr')) {
+      return { status: 'warn', detail: `✗ Profilarr didn't start${sup.info('profilarr').error ? ` (${sup.info('profilarr').error})` : ''}${lastLog('profilarr')}` };
+    }
+    if (!config.supervise) return { status: 'skipped', detail: 'Only done inside the container.' };
+
+    const file = path.join(config.configDir, 'profilarr', 'data', 'profilarr.db');
+    for (let i = 0; i < 30 && !(await profilarr.ready(file)); i++) await new Promise((r) => setTimeout(r, 1000)); // first start creates it
+    if (!(await profilarr.ready(file))) throw new Error("hasn't created its database yet");
+
+    await sup.stop('profilarr'); // it keeps the database open while it runs
+    const lines = [];
+    try {
+      const done = await profilarr.upsertInstances(file, targets.map((id) => ({ name: byId[id].name, type: id, url: baseUrl(byId[id]), apiKey: keyOf(id) })));
+      for (const d of done) lines.push(`✓ ${d.name} ${d.how} in Profilarr`);
+    } finally {
+      stack.startModule('profilarr');
+    }
+    const up = await health.waitUntilUp(byId.profilarr, { timeout: 60_000 });
+    if (!up) lines.push('✗ Profilarr is still starting — give it a minute');
+    return { status: up ? 'ok' : 'warn', detail: lines.join('\n') };
   },
 
   async subtitles(ctx) {
@@ -323,6 +369,7 @@ function plan(ids) {
   if (has('prowlarr') && libs.length) p.push({ id: 'indexers', label: 'Sharing Prowlarr indexers' });
   if (has('prowlarr') && has('flaresolverr')) p.push({ id: 'flaresolverr', label: 'Connecting FlareSolverr to Prowlarr' });
   if (has('bazarr') && has('sonarr', 'radarr')) p.push({ id: 'subtitles', label: 'Connecting Bazarr' });
+  if (has('profilarr') && has('sonarr', 'radarr')) p.push({ id: 'profilarr', label: 'Connecting Profilarr to Sonarr and Radarr' });
   if (has('seerr')) p.push({ id: 'requests', label: 'Setting up requests in Seerr' });
   p.push({ id: 'finish', label: 'Finishing up' });
   return p;

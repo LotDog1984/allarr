@@ -49,6 +49,13 @@ export function list() {
       detail: `Create your admin account, then add your ${server ?? 'media server'} so invites can create accounts on it.`,
     });
   }
+  if (on.has('profilarr')) {
+    t.push({
+      id: 'profilarr', app: 'profilarr', cta: 'Open Profilarr',
+      title: 'Create your Profilarr account',
+      detail: "Profilarr's first screen asks you to choose a username and password (it has its own sign-in). Sonarr and Radarr are already added and the community profile database is linked; pick what to sync. If Sonarr or Radarr are missing under Arr, add them with the addresses and keys from Settings → Connection details.",
+    });
+  }
   if (on.has('maintainerr')) {
     t.push({
       id: 'maintainerr', app: 'maintainerr', path: '/maintainerr/', cta: 'Open Maintainerr',

@@ -19,7 +19,7 @@ import { byId } from './modules.js';
  *  - NOTHING is ever installed automatically. Sonarr, Radarr, Lidarr and Prowlarr can be updated in place
  *    from the GUI after the user confirms: download -> checksum -> stop -> back up the database -> switch ->
  *    start -> verify. If the new version doesn't come up, the old one is restored automatically.
- *  - Everything else (Bazarr, SABnzbd, Seerr, Wizarr, Maintainerr, Cleanuparr, FlareSolverr) needs a compiled build, so for
+ *  - Everything else (Bazarr, SABnzbd, Seerr, Wizarr, Maintainerr, Cleanuparr, FlareSolverr, Profilarr) needs a compiled build, so for
  *    those the badge just says a newer image is needed; the user redeploys the stack.
  */
 export const events = new EventEmitter();
@@ -31,7 +31,7 @@ const SERVARR = { radarr: ['radarr.servarr.com', 'Radarr/Radarr'], lidarr: ['lid
 const GITHUB = {
   bazarr: 'morpheus65535/bazarr', sabnzbd: 'sabnzbd/sabnzbd', seerr: 'seerr-team/seerr',
   maintainerr: 'Maintainerr/Maintainerr', wizarr: 'wizarrrr/wizarr', cleanuparr: 'Cleanuparr/Cleanuparr',
-  flaresolverr: 'FlareSolverr/FlareSolverr',
+  flaresolverr: 'FlareSolverr/FlareSolverr', profilarr: 'Dictionarry-Hub/profilarr',
 };
 export const hasSource = (id) => id === 'sonarr' || id in SERVARR || id in GITHUB;
 

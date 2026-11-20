@@ -77,7 +77,7 @@ export function icon(name, size = 18) {
 export const APP_ICON = {
   sonarr: 'tv', radarr: 'film', lidarr: 'music', prowlarr: 'search', bazarr: 'captions',
   qbittorrent: 'download', sabnzbd: 'download', seerr: 'sparkle', wizarr: 'users',
-  maintainerr: 'trash', cleanuparr: 'trash',
+  maintainerr: 'trash', cleanuparr: 'trash', profilarr: 'settings',
 };
 
 /** Coloured square with the app's initial. (We use monograms, not trademarked logos.) */

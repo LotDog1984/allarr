@@ -195,7 +195,9 @@ function appView(id) {
       crashed,
       h('div', { class: 'card stack' },
         h('h2', {}, `${m.name} has its own address`),
-        h('p', { class: 'muted' }, `${m.name} is meant for the people you share it with, so it has its own sign-in and its own port instead of living behind your admin login.`),
+        h('p', { class: 'muted' }, m.id === 'profilarr'
+          ? `${m.name} can't be shown inside Allarr, so it has its own sign-in and its own port. It manages your Sonarr and Radarr settings: keep this address to yourself.`
+          : `${m.name} is meant for the people you share it with, so it has its own sign-in and its own port instead of living behind your admin login.`),
         h('div', { class: 'flex' }, h('code', { class: 'grow', style: { padding: '10px 12px' } }, url), button('Copy', { kind: 'secondary', icon: 'copy', onClick: () => copyText(url, 'Link copied') })),
         h('div', { class: 'flex' }, button(`Open ${m.name}`, { kind: 'primary', iconRight: 'external', onClick: () => window.open(url, '_blank', 'noopener') })),
         h('div', { class: 'hint' }, `Make sure port ${m.exposedPort} is published by your container, and put it behind your own domain/reverse proxy if you want to share it outside your home.`))));
@@ -250,10 +252,10 @@ function addressesCard() {
   const inputs = Object.fromEntries(apps.map((m) => [m.id, h('input', { class: 'input', placeholder: `${m.name} port or address`, value: String(m.exposedPort) })]));
   const err = h('div', { class: 'error-text', role: 'alert' });
   return h('div', { class: 'card' },
-    h('div', { class: 'card-title' }, icon('external', 20), h('h3', {}, 'Addresses for requests and invites')),
+    h('div', { class: 'card-title' }, icon('external', 20), h('h3', {}, 'Addresses for Seerr, Wizarr and Profilarr')),
     h('p', { class: 'small muted', style: { marginBottom: '14px' } },
-      'Seerr and Wizarr are opened on their own port. If you published them under different ports (for example 12000:5055), enter the port you use on the left, or a full address if they sit behind your own domain.'),
-    h('div', { class: 'row' }, apps.map((m) => h('div', { class: 'field' }, h('label', {}, `${m.name} (default ${m.id === 'seerr' ? 5055 : 5690})`), inputs[m.id]))),
+      'Seerr, Wizarr and Profilarr are opened on their own port. If you published them under different ports (for example 12000:5055), enter the port you use on the left, or a full address if they sit behind your own domain.'),
+    h('div', { class: 'row' }, apps.map((m) => h('div', { class: 'field' }, h('label', {}, `${m.name} (default ${({ seerr: 5055, wizarr: 5690, profilarr: 6868 })[m.id]})`), inputs[m.id]))),
     err,
     button('Save addresses', { kind: 'secondary', onClick: async () => {
       err.textContent = '';

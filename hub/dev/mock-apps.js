@@ -100,6 +100,12 @@ function handler(m) {
     if (m.kind === 'sabnzbd' && p === '/api') {
       const q = u.searchParams;
       if (q.get('mode') === 'version') return reply(200, { version: '5.1.3-mock' });
+      if (q.get('mode') === 'get_cats') return reply(200, { categories: ['*', ...(state.cats ??= ['movies', 'tv', 'music'])] });
+      if (q.get('mode') === 'set_config' && q.get('section') === 'categories') {
+        if (q.get('apikey') !== expectedKey(m)) return reply(200, { status: false, error: 'API Key Incorrect' });
+        (state.cats ??= ['movies', 'tv', 'music']).push(q.get('name'));
+        return reply(200, { status: true });
+      }
       if (q.get('mode') === 'set_config') {
         if (q.get('apikey') !== expectedKey(m)) return reply(200, { status: false, error: 'API Key Incorrect' });
         log(` ${q.get('section')} ${q.get('name')} ${q.get('host')}`);

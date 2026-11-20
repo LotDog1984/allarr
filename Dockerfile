@@ -12,6 +12,9 @@ ARG WIZARR_VERSION=2026.10.1
 ARG SABNZBD_VERSION=5.1.3
 ARG CLEANUPARR_VERSION=2.11.1
 ARG FLARESOLVERR_VERSION=3.5.2
+ARG PROFILARR_VERSION=2.3.1
+# Deno compiles Profilarr into one binary; only the build stage needs it (bump together with upstream's Dockerfile).
+ARG DENO_VERSION=2.9.8
 
 # ---------------------------------------------------------------------------------------
 # 1. Prebuilt binaries: Sonarr, Radarr, Lidarr, Prowlarr, Bazarr, Cleanuparr
@@ -67,6 +70,32 @@ RUN CYPRESS_INSTALL_BINARY=0 pnpm install --frozen-lockfile && pnpm build \
 #   the UI shows a "Seerr Updated - Reload" popup forever.
 
 # ---------------------------------------------------------------------------------------
+# 2b. Profilarr (a SvelteKit app that Deno compiles into one binary). Same recipe as upstream's Dockerfile.
+# ---------------------------------------------------------------------------------------
+FROM denoland/deno:${DENO_VERSION} AS profilarr-build
+ARG TARGETARCH
+ARG PROFILARR_VERSION
+RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+WORKDIR /build
+RUN curl -fsSL "https://github.com/Dictionarry-Hub/profilarr/archive/refs/tags/v${PROFILARR_VERSION}.tar.gz" | tar xz --strip-components=1 \
+ && deno ci
+# Stamp the version into the build, as upstream's Dockerfile does.
+RUN printf '%s\n' \
+  "export type Channel = 'stable' | 'develop' | 'dev';" \
+  "export interface BuildInfo { readonly version: string; readonly channel: Channel; readonly commit: string | null; readonly builtAt: string | null; }" \
+  "export const build: BuildInfo = { version: '${PROFILARR_VERSION}', channel: 'stable', commit: null, builtAt: null };" \
+  > src/lib/shared/build.ts
+ENV VITE_PLATFORM=docker-${TARGETARCH} VITE_CHANNEL=stable APP_BASE_PATH=/build/dist/build
+RUN deno run -A vite build
+# Warm the cache of the native helper (bcrypt) that the compiled binary loads at runtime.
+RUN DENO_DIR=/tmp/profilarr-deno-cache deno eval "import { hash } from '@felix/bcrypt'; await hash('profilarr')"
+RUN DENO_TARGET=$(case "${TARGETARCH}" in arm64) echo aarch64-unknown-linux-gnu;; *) echo x86_64-unknown-linux-gnu;; esac) \
+ && deno compile --node-modules-dir=none --exclude-unused-npm --no-check \
+    --allow-net --allow-read --allow-write --allow-env --allow-ffi --allow-run --allow-sys \
+    --target "$DENO_TARGET" --output dist/build/profilarr dist/build/mod.ts
+
+# ---------------------------------------------------------------------------------------
 # 3. Maintainerr (needs Node >= 26, so it gets its own runtime; Seerr and the Hub use Node 22)
 # ---------------------------------------------------------------------------------------
 FROM node:26-bookworm-slim AS maintainerr-build
@@ -100,6 +129,7 @@ ARG SEERR_VERSION
 ARG MAINTAINERR_VERSION
 ARG CLEANUPARR_VERSION
 ARG FLARESOLVERR_VERSION
+ARG PROFILARR_VERSION
 ENV DEBIAN_FRONTEND=noninteractive
 
 # .NET runtime libs, Python, the torrent client, Usenet extraction tools, Maintainerr's image libs,
@@ -114,6 +144,7 @@ RUN sed -i 's/^Components: main$/Components: main non-free/' /etc/apt/sources.li
     par2 p7zip-full unrar \
     libcairo2 libpango-1.0-0 libpangocairo-1.0-0 libpixman-1-0 libjpeg62-turbo libgif7 librsvg2-2 \
     chromium chromium-driver xvfb xauth \
+    git \
  && rm -rf /var/lib/apt/lists/*
 
 # Servarr apps, Bazarr, Cleanuparr
@@ -125,8 +156,8 @@ COPY --from=fetch /out/bazarr     /opt/bazarr
 COPY --from=fetch /out/cleanuparr /opt/cleanuparr
 # What's in this image, for the Hub's update checks (the fetch stage recorded the downloaded apps).
 COPY --from=fetch /out/versions.json /opt/versions.json
-RUN V_SAB="$SABNZBD_VERSION" V_WIZ="$WIZARR_VERSION" V_SEERR="$SEERR_VERSION" V_MAIN="$MAINTAINERR_VERSION" V_CLEAN="$CLEANUPARR_VERSION" V_FLARE="$FLARESOLVERR_VERSION" \
-    node -e "const fs=require('fs'),e=process.env,f='/opt/versions.json',v=JSON.parse(fs.readFileSync(f));Object.assign(v,{sabnzbd:e.V_SAB,wizarr:e.V_WIZ,seerr:e.V_SEERR,maintainerr:e.V_MAIN,cleanuparr:e.V_CLEAN,flaresolverr:e.V_FLARE});fs.writeFileSync(f,JSON.stringify(v))"
+RUN V_SAB="$SABNZBD_VERSION" V_WIZ="$WIZARR_VERSION" V_SEERR="$SEERR_VERSION" V_MAIN="$MAINTAINERR_VERSION" V_CLEAN="$CLEANUPARR_VERSION" V_FLARE="$FLARESOLVERR_VERSION" V_PROF="$PROFILARR_VERSION" \
+    node -e "const fs=require('fs'),e=process.env,f='/opt/versions.json',v=JSON.parse(fs.readFileSync(f));Object.assign(v,{sabnzbd:e.V_SAB,wizarr:e.V_WIZ,seerr:e.V_SEERR,maintainerr:e.V_MAIN,cleanuparr:e.V_CLEAN,flaresolverr:e.V_FLARE,profilarr:e.V_PROF});fs.writeFileSync(f,JSON.stringify(v))"
 # Cleanuparr hardcodes <app dir>/config; keep its state in /config/cleanuparr like every other app.
 RUN rm -rf /opt/cleanuparr/config && ln -s /config/cleanuparr /opt/cleanuparr/config  && mkdir -p /opt/bazarr/bin && chmod -R a+rwX /opt/bazarr/bin
 
@@ -145,6 +176,13 @@ RUN mkdir -p /opt/flaresolverr /app \
  && python3 -m venv /opt/venv-flaresolverr \
  && /opt/venv-flaresolverr/bin/pip install --no-cache-dir -r /opt/flaresolverr/requirements.txt \
  && cp /usr/bin/chromedriver /app/chromedriver && chmod -R a+rwX /app
+
+# Profilarr. Its DENO_DIR holds the cached native helper and must be writable by the app user.
+COPY --from=profilarr-build /build/dist/build/profilarr    /opt/profilarr/profilarr
+COPY --from=profilarr-build /build/dist/build/server.js    /opt/profilarr/server.js
+COPY --from=profilarr-build /build/dist/build/static       /opt/profilarr/static
+COPY --from=profilarr-build /tmp/profilarr-deno-cache/plug /opt/profilarr/deno-cache/plug
+RUN chmod -R a+rwX /opt/profilarr/deno-cache
 
 # Seerr
 COPY --from=seerr-build /app               /opt/seerr
@@ -179,8 +217,8 @@ ENV PUID=1000 PGID=1000 TZ=Etc/UTC \
     ALLARR_CONFIG_DIR=/config ALLARR_MEDIA_DIR=/media ALLARR_APPS_DIR=/opt \
     ALLARR_PORT=8080
 
-# 8080 Hub (everything for you) | 5055 Seerr (requests) | 5690 Wizarr (invites) | 6881 torrent peers
-EXPOSE 8080 5055 5690 6881/tcp 6881/udp
+# 8080 Hub (everything for you) | 5055 Seerr (requests) | 5690 Wizarr (invites) | 6868 Profilarr | 6881 torrent peers
+EXPOSE 8080 5055 5690 6868 6881/tcp 6881/udp
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
   CMD curl -fsS http://127.0.0.1:8080/api/state >/dev/null || exit 1
 

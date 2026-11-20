@@ -49,6 +49,21 @@ export const MODULES = [
     run: () => ({ cmd: path.join(binDir('lidarr'), 'Lidarr'), args: ['-nobrowser', `-data=${cfg('lidarr')}`] }),
   },
   {
+    // No URL-prefix support (it is a SvelteKit app with absolute links), so like Seerr it lives on its own port with its
+    // own sign-in. It's a tool for the admin, not for friends: don't share this port.
+    id: 'profilarr', name: 'Profilarr', role: 'Quality profiles', group: 'library', color: '#3b82f6',
+    blurb: 'Keeps Sonarr and Radarr quality profiles and custom formats in sync with community-curated ones.',
+    port: 6868, exposed: true, kind: 'profilarr', health: '/api/v1/health', defaultOn: true,
+    run: (m) => ({
+      cmd: app('profilarr', 'profilarr'), cwd: app('profilarr'),
+      env: {
+        PORT: String(m.listenPort), HOST: '0.0.0.0', APP_BASE_PATH: cfg('profilarr'),
+        DENO_DIR: app('profilarr', 'deno-cache'), // holds the native helper it loads (bcrypt)
+        DENO_SQLITE_PATH: `/usr/lib/${process.arch === 'arm64' ? 'aarch64' : 'x86_64'}-linux-gnu/libsqlite3.so.0`,
+      },
+    }),
+  },
+  {
     id: 'prowlarr', theme: 'servarr', name: 'Prowlarr', role: 'Indexers', group: 'search', color: '#e66000',
     blurb: 'One place to add search sources. Shares them with Sonarr, Radarr and Lidarr.',
     port: 9696, basePath: '/prowlarr', kind: 'servarr', api: 'v1', health: '/ping', defaultOn: true,

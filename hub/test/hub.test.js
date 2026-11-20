@@ -47,6 +47,27 @@ test('FlareSolverr is a headless app that listens on localhost only and is seede
   assert.ok(fs.statSync(path.join(process.env.ALLARR_CONFIG_DIR, 'flaresolverr', '.config', 'chromium', 'Crash Reports', 'pending')).isDirectory());
 });
 
+test('Profilarr connections are added once, then refreshed, with the sync priority rows', async () => {
+  const { DatabaseSync } = await import('node:sqlite');
+  const { ready, upsertInstances } = await import('../src/profilarr.js');
+  const file = path.join(tmp, 'profilarr.db');
+  assert.equal(await ready(file), false); // no database yet
+  const db = new DatabaseSync(file);
+  db.exec(`CREATE TABLE arr_instances (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL UNIQUE, type TEXT NOT NULL, url TEXT NOT NULL, api_key TEXT NOT NULL, enabled INTEGER NOT NULL DEFAULT 1);
+    CREATE TABLE database_instances (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT);
+    CREATE TABLE arr_sync_database_priority (instance_id INTEGER, database_id INTEGER, priority INTEGER);
+    INSERT INTO database_instances (name) VALUES ('Dictionarry');`);
+  db.close();
+  assert.equal(await ready(file), true);
+  const entries = [{ name: 'Radarr', type: 'radarr', url: 'http://127.0.0.1:7878/radarr', apiKey: 'a' }, { name: 'Sonarr', type: 'sonarr', url: 'http://127.0.0.1:8989/sonarr', apiKey: 'b' }];
+  assert.deepEqual((await upsertInstances(file, entries)).map((d) => d.how), ['added', 'added']);
+  assert.deepEqual((await upsertInstances(file, entries.map((e) => ({ ...e, apiKey: e.apiKey + '2' })))).map((d) => d.how), ['updated', 'updated']);
+  const check = new DatabaseSync(file);
+  assert.deepEqual(check.prepare('SELECT name, api_key FROM arr_instances ORDER BY id').all().map((r) => [r.name, r.api_key]), [['Radarr', 'a2'], ['Sonarr', 'b2']]);
+  assert.equal(check.prepare('SELECT COUNT(*) AS n FROM arr_sync_database_priority').get().n, 2); // one per new instance, not per refresh
+  check.close();
+});
+
 test('storage layout is created and hardlinks are proven', () => {
   const r = storage.check();
   assert.ok(r.ok, JSON.stringify(r.issues));
