@@ -60,7 +60,10 @@ ARG SEERR_VERSION
 ENV COMMIT_TAG=v${SEERR_VERSION}
 RUN CYPRESS_INSTALL_BINARY=0 pnpm install --frozen-lockfile && pnpm build \
  && rm -rf src server node_modules cache .git \
- && mkdir -p config && touch config/DOCKER
+ && mkdir -p config && touch config/DOCKER \
+ && echo "{\"commitTag\": \"${COMMIT_TAG}\"}" > committag.json
+# ^ the server reports this tag and the web app was built with the same one; if they differ
+#   the UI shows a "Seerr Updated - Reload" popup forever.
 
 # ---------------------------------------------------------------------------------------
 # 3. Maintainerr (needs Node >= 26, so it gets its own runtime; Seerr and the Hub use Node 22)
