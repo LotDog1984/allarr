@@ -7,7 +7,7 @@
 # Pin or bump the apps here. The Servarr apps (Sonarr, Radarr, Lidarr, Prowlarr) and Bazarr
 # are fetched as "latest" at build time; everything else is pinned for reproducible builds.
 ARG SEERR_VERSION=3.5.2
-ARG MAINTAINERR_VERSION=3.32.0
+ARG MAINTAINERR_VERSION=3.33.0
 ARG WIZARR_VERSION=2026.10.1
 ARG SABNZBD_VERSION=5.1.3
 ARG CLEANUPARR_VERSION=2.11.1
